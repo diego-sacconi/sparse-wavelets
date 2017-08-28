@@ -8,17 +8,6 @@ from lib.graph_signal_proc import Node
 import lib.graph_signal_proc as gsp
 
 
-"""
-import math
-
-import numpy as np
-import scipy
-import networkx as nx
-
-
-"""
-
-
 def sweep_opt(x, F, G, k, ind):
     """
             Sweep algorithm for sparse wavelets.
