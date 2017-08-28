@@ -16,12 +16,13 @@ from sklearn.preprocessing import normalize
 
 def compute_eigenvectors_and_eigenvalues(L):
     """
-            Computes eigenvectors and eigenvalues of the matrix L
-            Input:
-                    * L: matrix
-            Output:
-                    * U: eigenvector matrix, one vector/column, sorted by corresponsing eigenvalue
-                    * lamb: eigenvalues, sorted in increasing order
+        Computes eigenvectors and eigenvalues of the matrix L
+        Input:
+            * L: matrix
+        Output:
+            * U: eigenvector matrix, one vector/column, sorted by corresponding
+                 eigenvalue
+            * lamb: eigenvalues, sorted in increasing order
     """
     lamb, U = linalg.eig(L)
 
@@ -34,22 +35,24 @@ def compute_eigenvectors_and_eigenvalues(L):
 
 def s(x):
     """
-            Cubic spline.
-            Input:
-                    * x
-            Output:
-                    * spline(x)
+        Cubic spline, see Hammond, D. K.,Vandergheynst, P., & Gribonval, R.
+        (2011). "Wavelets on graphs via spectral graph theory".
+        Input:
+                * x
+        Output:
+                * spline(x)
     """
     return -5 + 11 * x - 6 * pow(x, 2) + pow(x, 3)
 
 
 def g(x):
     """
-            Wavelet kernel.
-            Input:
-                    * x
-            Output:
-                    * kernel of x
+        Wavelet generating kernel, see Hammond, D. K.,Vandergheynst, P.,
+        & Gribonval, R. (2011). "Wavelets on graphs via spectral graph theory".
+        Input:
+                * x
+        Output:
+                * kernel of x
     """
     a = 2
     b = 2
@@ -66,27 +69,30 @@ def g(x):
 
 def comp_gamma():
     """
-            Computes gamma function
-            Input:
-                    * None
-            Output:
-                    * Gamma function (array)
+        In Hammond, D. K.,Vandergheynst, P.,& Gribonval, R. (2011).
+        "Wavelets on graphs via spectral graph theory" gamma is a parameter
+        used to determine the scaling function h. It is such that h(0) = max(g)
+        Input:
+                * None
+        Output:
+                * Gamma function (array)
     """
-    def gn(x): return -1 * g(x)
-    xopt = scipy.optimize.fminbound(gn, 1, 2)
+    # fminbound finds the minimum within the optimization bounds
+    xopt = scipy.optimize.fminbound(lambda x: -g(x), 1, 2)
     return xopt
 
 
 def h(x, gamma, lamb_max, K):
     """
-            Scaling function (see details in the paper "Graph wavelets via spectral theory".
-            Input:
-                    * x
-                    * gamma
-                    * lamb_max: upper bound spectrum
-                    * K: normalization
-            Output:
-                    * value of scaling function
+        Scaling function see Hammond, D. K.,Vandergheynst, P.,
+        & Gribonval, R. (2011). "Wavelets on graphs via spectral graph theory".
+        Input:
+                * x
+                * gamma
+                * lamb_max: upper bound spectrum
+                * K: normalization
+        Output:
+                * value of scaling function
     """
     lamb_min = float(lamb_max) / K
     return gamma * math.exp(-pow(float(x / (lamb_min * 0.6)), 4))
@@ -94,13 +100,14 @@ def h(x, gamma, lamb_max, K):
 
 def comp_scales(lamb_max, K, J):
     """
-            Computes wavelet scales
-            Input:
-                    * lamb_max: upper bound spectrum
-                    * K: normalization
-                    * J: number of scales
-            Output:
-                    * scales array
+        Computes wavelet scales see Hammond, D. K.,Vandergheynst, P.,
+        & Gribonval, R. (2011). "Wavelets on graphs via spectral graph theory".
+        Input:
+                * lamb_max: upper bound spectrum
+                * K: normalization
+                * J: number of scales
+        Output:
+                * scales array
     """
     lamb_min = float(lamb_max) / K
     s_min = float(1) / lamb_max
@@ -111,13 +118,13 @@ def comp_scales(lamb_max, K, J):
 
 def graph_low_pass(lamb, U, N, T, gamma, lamb_max, K):
     """
-            Low-pass filter.
+            Low-pass filter (square matrix).
             Input:
                     * lamb: eigenvalues
                     * U: eigenvector matrix
                     * N: number of nodes
                     * T: wavelet scales
-                    * gamma:
+                    * gamma: scaling function parameter
                     * lamb_max: upper-bound spectrum
                     * K: normalization
             Output:
