@@ -132,14 +132,14 @@ def graph_low_pass(lamb, U, N, T, gamma, lamb_max, K):
     """
     s = []
 
-    for n in range(0, len(N)):
+    for n in range(N):
         s.append([])
 
-    for n in range(0, len(N)):
-        for m in range(0, len(U)):
+    for n in range(N):
+        for m in range(len(U)):
             s_n_m = 0
 
-            for x in range(0, len(U)):
+            for x in range(len(U)):
                 s_n_m = s_n_m + U[n][x] * U[m][x] * h(T[-1] * lamb[x], gamma, lamb_max, K)
 
             s[n].append(s_n_m)
