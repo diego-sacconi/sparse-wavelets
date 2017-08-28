@@ -10,20 +10,7 @@ from numpy.linalg import eigh
 from lib.graph_signal_proc import *
 from scipy import sparse
 
-def sqrtm(mat):
-	"""
-	Matrix square root.
-	Input:
-		* mat: matrix
-	Output:
-		* matrix square root
-	"""
-	eigvals, eigvecs = eigh(mat)
 
-	eigvecs = eigvecs[:, eigvals > 0]
-	eigvals = eigvals[eigvals > 0]
-
-	return dot(eigvecs, dot(diag(sqrt(eigvals)), eigvecs.T))
 
 def sweep_opt(x, F, G, k, ind):
 	"""

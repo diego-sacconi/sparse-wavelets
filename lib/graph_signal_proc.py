@@ -22,7 +22,7 @@ from numpy.linalg import eigh
 def compute_eigenvectors_and_eigenvalues(L):
 	"""
 		Computes eigenvectors and eigenvalues of the matrix L
-		Input: 
+		Input:
 			* L: matrix
 		Output:
 			* U: eigenvector matrix, one vector/column, sorted by corresponsing eigenvalue
@@ -30,7 +30,7 @@ def compute_eigenvectors_and_eigenvalues(L):
 	"""
 	lamb, U = linalg.eig(L)
 
-	idx = lamb.argsort()   
+	idx = lamb.argsort()
 	lamb = lamb[idx]
 	U = U[:,idx]
 
@@ -128,7 +128,7 @@ def graph_low_pass(lamb, U, N, T, gamma, lamb_max, K):
 		s.append([])
 
 	for n in range(0, len(N)):
-		for m in range(0, len(U)):    
+		for m in range(0, len(U)):
 			s_n_m = 0
 
 			for x in range(0, len(U)):
@@ -159,7 +159,7 @@ def graph_wavelets(lamb, U, N, T):
 
 	for t in range(0, len(T)):
 		for n in range(0, len(N)):
-			for m in range(0, len(U)):    
+			for m in range(0, len(U)):
 				w_t_n_m = 0
 
 				for x in range(0, len(U)):
@@ -181,7 +181,7 @@ def graph_fourier(F, U):
 	lambdas = []
 
 	for i in range(0, len(U)):
-		lambdas.append(numpy.dot(F, U[:,i]))    
+		lambdas.append(numpy.dot(F, U[:,i]))
 
 	lambdas = numpy.array(lambdas)
 
@@ -312,7 +312,7 @@ def set_counts(tree):
 		Sets counts for intermediate nodes in the tree.
 		Input:
 			* tree: tree node
-		Output: 
+		Output:
 			* count: count for the tree node
 	"""
 	if tree.data is not None:
@@ -350,7 +350,7 @@ def partitions_level_rec(tree, level, G, l, partitions):
 				partitions_level_rec(c, level, G, l+1, partitions)
 		else:
 			partitions.append([tree.data])
-			
+
 def partitions_level(tree, level, G):
 	"""
 		Recovers partitions at a certain level of the three.
@@ -363,7 +363,7 @@ def partitions_level(tree, level, G):
 	"""
 	partitions = []
 	partitions_level_rec(tree, level, G, 0, partitions)
-	
+
 	return partitions
 
 def build_matrix(G, ind):
@@ -393,7 +393,7 @@ def select_centroids(M, radius):
 			* M
 			* radius
 		Output:
-			* centroids	
+			* centroids
 	"""
 	nodes = list(range(M.shape[0]))
 	random.shuffle(nodes)
@@ -417,7 +417,7 @@ def coarse_matrix(M, H, cents, nodes):
 		Makes matrix coarser based on centroids.
 		Input:
 			* M: distance matrix
-			* H: 
+			* H:
 			* cents: centroids
 			* nodes: list of nodes
 		Output:
@@ -464,7 +464,7 @@ def coarse_matrix(M, H, cents, nodes):
 
 def get_partitions(x, node_list):
 	"""
-		Gets partitions given indicator vector. 
+		Gets partitions given indicator vector.
 			if x < 0: partition 1
 			if x <= 0: partition 2
 		Input:
@@ -501,7 +501,7 @@ def get_new_laplacians(L, P1, P2, ind):
 	data = []
 	row = []
 	col = []
- 
+
 	for i in range(len(P1)):
 		d = 0
 		for j in range(len(P1)):
@@ -510,17 +510,17 @@ def get_new_laplacians(L, P1, P2, ind):
 				col.append(j)
 				data.append(float(L[ind[P1[i]],ind[P1[j]]]))
 				d = d - L[ind[P1[i]],ind[P1[j]]]
- 
+
 		row.append(i)
 		col.append(i)
 		data.append(float(d))
-	
+
 	L1 = scipy.sparse.csr_matrix((data, (row, col)), shape=(len(P1), len(P1)))
-	
+
 	data = []
 	row = []
 	col = []
-	
+
 	for i in range(len(P2)):
 		d = 0
 		for j in range(len(P2)):
@@ -529,11 +529,11 @@ def get_new_laplacians(L, P1, P2, ind):
 				col.append(j)
 				data.append(float(L[ind[P2[i]],ind[P2[j]]]))
 				d = d - L[ind[P2[i]],ind[P2[j]]]
- 
+
 		row.append(i)
 		col.append(i)
 		data.append(float(d))
-	
+
 	L2 = scipy.sparse.csr_matrix((data, (row, col)), shape=(len(P2), len(P2)))
 
 	return L1, L2
@@ -550,8 +550,23 @@ def laplacian_complete(n):
 	C = -1 * C
 	D = numpy.diag(numpy.ones(n))
 	C = (n)*D + C
-	
+
 	return C
+
+def sqrtm(mat):
+	"""
+		Matrix square root.
+		Input:
+			* mat: matrix
+		Output:
+			* matrix square root
+	"""
+	eigvals, eigvecs = eigh(mat)
+
+	eigvecs = eigvecs[:, eigvals > 0]
+	eigvals = eigvals[eigvals > 0]
+
+	return dot(eigvecs, dot(diag(sqrt(eigvals)), eigvecs.T))
 
 def sqrtmi(mat):
 	"""
@@ -576,7 +591,7 @@ def create_linked_list(L):
 			* linked_list: linked list
 	"""
 	linked_list = {}
-	
+
 	for i in L.nonzero()[0]:
 		linked_list[i] = []
 		for j in range(L.shape[1]):
@@ -589,7 +604,7 @@ def sweep(x, G):
 		Sweep algorithm for ratio-cut (2nd eigenvector of the Laplacian) based on vector x.
 		Input:
 			* x: vector
-			* G: graph	
+			* G: graph
 		Output:
 			* vec: indicator vector
 	"""
@@ -601,22 +616,22 @@ def sweep(x, G):
 
 	for i in range(x.shape[0]):
 		size_one = size_one + 1
-		
+
 		nodes_one[G.nodes()[sorted_x[i]]] = True
-		
+
 		for v in G.neighbors(G.nodes()[sorted_x[i]]):
 			if v not in nodes_one:
 				edges_cut = edges_cut + 1
 			else:
 				edges_cut = edges_cut - 1
-			
+
 		den = size_one * (networkx.number_of_nodes(G)-size_one)
 
 		if den > 0:
 			val = float(edges_cut) / den
 		else:
 			val = networkx.number_of_nodes(G)
-		
+
 		if val <= best_val:
 			best_cand = i
 			best_val = val
@@ -630,7 +645,7 @@ def sweep(x, G):
 			vec[sorted_x[i]] = -1.
 		else:
 			vec[sorted_x[i]] = 1.
-	
+
 	return vec
 
 def separate_lcc(G, G0):
@@ -649,7 +664,7 @@ def separate_lcc(G, G0):
 			x.append(-1)
 		else:
 			x.append(1.)
-	
+
 	return numpy.array(x)
 
 def ratio_cut(G):
@@ -660,7 +675,7 @@ def ratio_cut(G):
 		Output:
 			* x: Indicator vector
 	"""
-	
+
 	Gcc=sorted(networkx.connected_component_subgraphs(G), key = len, reverse=True)
 	G0=Gcc[0]
 
@@ -689,7 +704,7 @@ def eig_vis_rc(G):
 
 	x1 = numpy.asarray(eigvecs[:,0])
 	x2 = numpy.asarray(eigvecs[:,1])
-	
+
 	return x1, x2
 
 def get_subgraphs(G, cut):
@@ -704,7 +719,7 @@ def get_subgraphs(G, cut):
 	"""
 	G1 = networkx.Graph()
 	G2 = networkx.Graph()
- 
+
 	i = 0
 	P1 = []
 	P2 = []
@@ -714,7 +729,7 @@ def get_subgraphs(G, cut):
 		else:
 			P2.append(v)
 		i = i + 1
- 
+
 	G1 = G.subgraph(P1)
 	G2 = G.subgraph(P2)
 
@@ -737,7 +752,7 @@ def rc_recursive(node, G, ind):
 		node.add_child(n)
 	else:
 		C =  ratio_cut(G)
-	
+
 		(G1, G2) = get_subgraphs(G, C)
 
 		if networkx.number_of_nodes(G1) > 1:
@@ -747,7 +762,7 @@ def rc_recursive(node, G, ind):
 		else:
 			l = Node(ind[G1.nodes()[0]])
 			node.add_child(l)
-	
+
 		if networkx.number_of_nodes(G2) > 1:
 			r = Node(None)
 			rc_recursive(r, G2, ind)
@@ -759,7 +774,7 @@ def rc_recursive(node, G, ind):
 def ratio_cut_hierarchy(G):
 	"""
 		Computes ratio-cut hierarchy for a graph.
-		Input: 
+		Input:
 			* G: graph
 		Output:
 			* root: tree root
@@ -822,7 +837,7 @@ def compute_coefficients(tree, F):
 		count = 0
 		for i in range(len(tree.children)):
 			compute_coefficients(tree.children[i], F)
-			avg = avg + tree.children[i].avg * tree.children[i].count 
+			avg = avg + tree.children[i].avg * tree.children[i].count
 			count = count + tree.children[i].count
 
 			if i > 0:
@@ -844,7 +859,7 @@ def reconstruct_values(tree, F):
 			* None
 	"""
 	if tree.data is None:
-		avg = tree.avg * tree.count 
+		avg = tree.avg * tree.count
 		count = tree.count
 		for i in reversed(range(len(tree.children))):
 			if i == 0:
@@ -854,7 +869,7 @@ def reconstruct_values(tree, F):
 				tree.children[i].avg = float(avg)/count + 0.5*float(tree.diffs[i-1]) / tree.children[i].count
 				reconstruct_values(tree.children[i], F)
 				count = count - tree.children[i].count
-				avg = avg - tree.children[i].avg * tree.children[i].count 
+				avg = avg - tree.children[i].avg * tree.children[i].count
 				tree.avgs.append(float(avg)/count)
 
 		tree.avgs = list(reversed(tree.avgs))
@@ -864,12 +879,12 @@ def reconstruct_values(tree, F):
 def clear_tree(tree):
 	"""
 		Clears tree info.
-		Input: 
+		Input:
 			* tree
-		Output: 
+		Output:
 			* None
 	"""
-	tree.avg = 0 
+	tree.avg = 0
 	tree.diffs = []
 	tree.avgs = []
 
@@ -985,4 +1000,3 @@ def gavish_wavelet_inverse(tree, ind, G, wtr):
 	reconstruct_values(tree, F)
 
 	return numpy.array(F)
-
