@@ -118,29 +118,33 @@ def comp_scales(lamb_max, K, J):
 
 def graph_low_pass(lamb, U, N, T, gamma, lamb_max, K):
     """
-            Low-pass filter (square matrix).
-            Input:
-                    * lamb: eigenvalues
-                    * U: eigenvector matrix
-                    * N: number of nodes
-                    * T: wavelet scales
-                    * gamma: scaling function parameter
-                    * lamb_max: upper-bound spectrum
-                    * K: normalization
-            Output:
-                    * s: Low-pass filter as a #vertices x #vertices matrix
+        Low-pass spectral filter (square matrix).
+        See "The emerging field of signal processing on graph"
+        Input:
+            * lamb: eigenvalues
+            * U: eigenvector matrix
+            * N: number of nodes
+            * T: wavelet scales
+            * gamma: scaling function parameter
+            * lamb_max: upper-bound spectrum
+            * K: normalization
+        Output:
+            * s: Low-pass filter as a N x N matrix
     """
+
+    h_vector_form = [h(T[-1] * lamb[x], gamma, lamb_max, K) for x in range(N)]
+
     s = []
 
     for n in range(N):
         s.append([])
 
     for n in range(N):
-        for m in range(len(U)):
+        for m in range(N):
             s_n_m = 0
 
-            for x in range(len(U)):
-                s_n_m = s_n_m + U[n][x] * U[m][x] * h(T[-1] * lamb[x], gamma, lamb_max, K)
+            for x in range(N):
+                s_n_m = s_n_m + U[n][x] * U[m][x] * h_vector_form[x]
 
             s[n].append(s_n_m)
 
@@ -149,28 +153,28 @@ def graph_low_pass(lamb, U, N, T, gamma, lamb_max, K):
 
 def graph_wavelets(lamb, U, N, T):
     """
-            Graph wavelets.
-            Input:
-                    * lamb: eigenvalues
-                    * U: eigenvector matrix
-                    * N: number of nodes
-                    * T: wavelet scales
-            Output:
-                    * w: wavelets as a #vertices x #vertices x #scales matrix
+        Graph wavelets.
+        Input:
+            * lamb: eigenvalues
+            * U: eigenvector matrix
+            * N: number of nodes
+            * T: wavelet scales
+        Output:
+            * w: wavelets as a N x N x #scales matrix
     """
     w = []
 
-    for t in range(0, len(T)):
+    for t in range(len(T)):
         w.append([])
-        for n in range(0, len(N)):
+        for n in range(N):
             w[t].append([])
 
-    for t in range(0, len(T)):
-        for n in range(0, len(N)):
-            for m in range(0, len(U)):
+    for t in range(len(T)):
+        for n in range(N):
+            for m in range(N):
                 w_t_n_m = 0
 
-                for x in range(0, len(U)):
+                for x in range(N):
                     w_t_n_m = w_t_n_m + U[n][x] * U[m][x] * g(T[t] * lamb[x])
 
                 w[t][n].append(w_t_n_m)

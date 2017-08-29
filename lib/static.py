@@ -90,9 +90,11 @@ class HWavelets(object):
         J = 4
         gamma = comp_gamma()
         self.T = comp_scales(lamb_max, K, J)
-        self.w = graph_wavelets(self.lamb_str.real, self.U.real, range(len(self.G.nodes())), self.T)
-        self.s = graph_low_pass(self.lamb_str.real, self.U.real, len(
-            self.G.nodes()), self.T, gamma, lamb_max, K)
+        self.w = graph_wavelets(self.lamb_str.real, self.U.real,
+                                len(self.G.nodes()), self.T)
+        self.s = graph_low_pass(self.lamb_str.real, self.U.real,
+                                len(self.G.nodes()), self.T, gamma,
+                                lamb_max, K)
 
     def transform(self, F):
         """
