@@ -160,7 +160,7 @@ def graph_wavelets(lamb, U, N, T):
             * N: number of nodes
             * T: wavelet scales
         Output:
-            * w: wavelets as a N x N x #scales matrix
+            * w: wavelets as a len(T) x N x N matrix
     """
     w = []
 
@@ -184,28 +184,28 @@ def graph_wavelets(lamb, U, N, T):
 
 def graph_fourier(F, U):
     """
-            Graph Fourier transform.
-            Input:
-                    * F: Graph signal as a #vertices size array, values ordered by G.nodes()
-                    * U: Eigenvectors matrix
-            Ouput:
-                    * lambdas: Graph Fourier transform
+        Graph Fourier transform.
+        Input:
+            * F: Graph signal as a #vertices size array, values ordered by G.nodes()
+            * U: Eigenvectors matrix
+        Ouput:
+            * F_hat: Graph Fourier transform
     """
-    lambdas = []
+    F_hat = []
 
     for i in range(0, len(U)):
-        lambdas.append(np.dot(F, U[:, i]))
+        F_hat.append(np.dot(F, U[:, i]))
 
-    lambdas = np.array(lambdas)
+    F_hat = np.array(F_hat)
 
-    return lambdas
+    return F_hat
 
 
-def graph_fourier_inverse(GF, U):
+def graph_fourier_inverse(F_hat, U):
     """
             Graph Fourier inverse:
             Input:
-                    * GF: Graph fourier transform
+                    * F_hat: Graph fourier transform
                     * U: Eigenvectors matrix
             Output:
                     * F: Inverse
@@ -213,7 +213,7 @@ def graph_fourier_inverse(GF, U):
     F = np.zeros(U.shape[0])
     for v in range(U.shape[0]):
         for u in range(U.shape[1]):
-            F[v] = F[v] + (GF[u] * U[v][u]).real
+            F[v] = F[v] + (F_hat[u] * U[v][u]).real
 
     return F
 
