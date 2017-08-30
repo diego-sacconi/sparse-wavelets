@@ -219,11 +219,11 @@ def graph_fourier_inverse(F_hat, U):
 
 
 def hammond_wavelet_transform(w, s, T, F):
-    """
+    r"""
             Hammond wavelet transform.
             Input:
                     * w: wavelets
-                    * s: low-pass wavelets
+                    * s: low-pass wavelet (scaling function)
                     * T: wavelet scales
                     * F: graph signal
             Output:
@@ -233,11 +233,13 @@ def hammond_wavelet_transform(w, s, T, F):
 
     for i in range(len(T)):
         C.append([])
+        # Each wavelet is represented by an N x N matrix
         for j in range(len(F)):
             dotp = np.dot(F, w[i][j])
             C[i].append(dotp)
 
     C.append([])
+    # Append output of scaling function application at the end
     for j in range(len(F)):
         dotp = np.dot(F, s[j])
         C[-1].append(dotp)
@@ -246,18 +248,18 @@ def hammond_wavelet_transform(w, s, T, F):
 
 
 def hammond_wavelets_inverse(w, s, C):
-    """
+    r"""
             Hammond's wavelet inverse.
             Input:
                     * w: wavelets
-                    * s: low-pass wavelets
+                    * s: low-pass wavelet (scaling function)
                     * C: transform
             Output:
                     * F: inverse
     """
     w = np.array(w)
     Wc = np.append(w, np.array([s]), axis=0)
-
+    # Creates copies of the inputs
     nWc = Wc[0, :, :]
     nC = C[0]
     for i in range(1, Wc.shape[0]):
@@ -266,7 +268,8 @@ def hammond_wavelets_inverse(w, s, C):
 
     nWc = np.array(nWc)
     nC = np.array(nC)
-
+    # Search a least square solution F, solving:
+    # nWc F = nC
     F = np.linalg.lstsq(nWc, nC)[0]
 
     return F
