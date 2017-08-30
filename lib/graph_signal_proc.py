@@ -277,14 +277,14 @@ def hammond_wavelets_inverse(w, s, C):
 
 class Node(object):
     """
-            Generic tree-structure used for hierarchical transforms.
+        Generic tree-structure used for hierarchical transforms.
     """
 
     def __init__(self, data):
         """
-                Initialization.
-                Input:
-                        * data: Anything to be stored in a node
+            Initialization.
+            Input:
+                * data: Anything to be stored in a node
         """
         self.data = data
         self.children = []
@@ -304,9 +304,9 @@ class Node(object):
 
     def add_child(self, obj):
         """
-                Adds obj as a child to a node.
-                Input:
-                        * obj: anything
+            Adds obj as a child to a node.
+            Input:
+                * obj: anything
         """
         obj.scale = self.scale + 1
         self.children.append(obj)
@@ -315,13 +315,13 @@ class Node(object):
 
 def get_children(tree, part, G):
     """
-            Recursively gets all the children of a given node.
-            Input:
-                    * tree: tree node
-                    * part: list that will contain children
-                    * G: graph
-            Output:
-                    * None
+        Recursively gets all the children of a given node.
+        Input:
+            * tree: tree node
+            * part: list that will contain children
+            * G: graph
+        Output:
+            * None
     """
     if tree.data is not None:
         part.append(G.nodes()[tree.data])
@@ -332,11 +332,11 @@ def get_children(tree, part, G):
 
 def set_counts(tree):
     """
-            Sets counts for intermediate nodes in the tree.
-            Input:
-                    * tree: tree node
-            Output:
-                    * count: count for the tree node
+        Sets counts for intermediate nodes in the tree.
+        Input:
+            * tree: tree node
+        Output:
+            * count: count for the tree node
     """
     if tree.data is not None:
         tree.count = 1
@@ -353,16 +353,18 @@ def set_counts(tree):
 
 def partitions_level_rec(tree, level, G, l, partitions):
     """
-            Recursively extracts partitions up to a certain level in the tree.
-            Input:
-                    * tree: tree
-                    * level: max level
-                    * G: graph
-                    * l: current level
-                    * partitions: partitions recovered
-            Output:
-                    None
+        Recursively extracts partitions from the current level
+        up to a certain level in the tree.
+        Input:
+            * tree: tree
+            * level: max level
+            * G: graph
+            * l: current level
+            * partitions: partitions recovered
+        Output:
+            None
     """
+    # Stopping condition
     if l >= level:
         part = []
         get_children(tree, part, G)
@@ -378,13 +380,13 @@ def partitions_level_rec(tree, level, G, l, partitions):
 
 def partitions_level(tree, level, G):
     """
-            Recovers partitions at a certain level of the three.
-            Input:
-                    * tree: tree
-                    * level: level
-                    * G: graph
-            Output:
-                    * partitions: set of vertices in each partition
+        Recovers partitions up to a certain level of the three.
+        Input:
+            * tree: tree
+            * level: level
+            * G: graph
+        Output:
+            * partitions: set of vertices in each partition
     """
     partitions = []
     partitions_level_rec(tree, level, G, 0, partitions)
