@@ -10,7 +10,6 @@ from numpy.linalg import eigh
 import scipy.optimize
 from scipy import linalg
 import scipy.fftpack
-
 from sklearn.preprocessing import normalize
 
 
@@ -186,7 +185,7 @@ def graph_fourier(F, U):
     """
         Graph Fourier transform.
         Input:
-            * F: Graph signal as a #vertices size array, values ordered by G.nodes()
+            * F: Graph signal with values ordered by G.nodes()
             * U: Eigenvectors matrix
         Ouput:
             * F_hat: Graph Fourier transform
@@ -396,12 +395,12 @@ def partitions_level(tree, level, G):
 
 def build_matrix(G, ind):
     """
-            Builds graph distance matrix.
-            Input:
-                    * G: graph
-                    * ind: dictionary vertex: unique integer
-            Output:
-                    * M: matrix
+        Builds graph distance matrix.
+        Input:
+            * G: graph
+            * ind: dictionary vertex: unique integer
+        Output:
+            * M: matrix
     """
     M = []
     dists = nx.all_pairs_dijkstra_path_length(G)
@@ -417,12 +416,12 @@ def build_matrix(G, ind):
 
 def select_centroids(M, radius):
     """
-            Selects half of the vertices as centroids.
-            Input:
-                    * M
-                    * radius
-            Output:
-                    * centroids
+        Selects half of the vertices as centroids.
+        Input:
+            * M
+            * radius
+        Output:
+            * centroids
     """
     nodes = list(range(M.shape[0]))
     random.shuffle(nodes)
@@ -495,15 +494,15 @@ def coarse_matrix(M, H, cents, nodes):
 
 def get_partitions(x, node_list):
     """
-            Gets partitions given indicator vector.
-                    if x < 0: partition 1
-                    if x <= 0: partition 2
-            Input:
-                    * node_list: list of nodes
-                    * x: indicator vector
-            Output:
-                    * P1: partition 1
-                    * P2: partition 2
+        Gets partitions given indicator vector.
+            if x < 0: partition 1
+            if x => 0: partition 2
+        Input:
+            * x: indicator vector
+            * node_list: list of nodes
+        Output:
+            * P1: partition 1
+            * P2: partition 2
     """
     P1 = []
     P2 = []
@@ -588,11 +587,11 @@ def laplacian_complete(n):
 
 def sqrtm(mat):
     """
-            Matrix square root.
-            Input:
-                    * mat: matrix
-            Output:
-                    * matrix square root
+        Matrix square root.
+        Input:
+            * mat: matrix
+        Output:
+            * matrix square root
     """
     eigvals, eigvecs = eigh(mat)
 
@@ -604,11 +603,11 @@ def sqrtm(mat):
 
 def sqrtmi(mat):
     """
-            Computes the square-root inverse of a matrix.
-            Input:
-                    * mat: matrix
-            Output:
-                    * square root inverse
+        Computes the square-root inverse of a matrix.
+        Input:
+            * mat: matrix
+        Output:
+            * square root inverse
     """
     eigvals, eigvecs = eigh(mat)
     eigvecs = eigvecs[:, eigvals > 0]
@@ -617,32 +616,15 @@ def sqrtmi(mat):
     return dot(eigvecs, dot(diag(1. / sqrt(eigvals)), eigvecs.T))
 
 
-def create_linked_list(L):
-    """
-            Creates linked list from a Laplacian matrix.
-            Input:
-                    * L: matrix
-            Output:
-                    * linked_list: linked list
-    """
-    linked_list = {}
-
-    for i in L.nonzero()[0]:
-        linked_list[i] = []
-        for j in range(L.shape[1]):
-            if L[i, j] < 0:
-                linked_list[i].append(j)
-    return linked_list
-
-
 def sweep(x, G):
     """
-            Sweep algorithm for ratio-cut (2nd eigenvector of the Laplacian) based on vector x.
-            Input:
-                    * x: vector
-                    * G: graph
-            Output:
-                    * vec: indicator vector
+        Sweep algorithm for ratio-cut (2nd eigenvector of the Laplacian).
+        Based on vector x.
+        Input:
+            * x: vector
+            * G: graph
+        Output:
+            * vec: indicator vector
     """
     best_val = nx.number_of_nodes(G) - 1
     sorted_x = np.argsort(x)
@@ -687,12 +669,12 @@ def sweep(x, G):
 
 def separate_lcc(G, G0):
     """
-            Separates vertices in G0 (LCC) from the rest in G using indicator vector.
-            Input:
-                    * G: Graph
-                    * G0: Subgraph
-            Output:
-                    * x: indicator vector
+        Separates vertices in G0 (LCC) from the rest in G using indicator vector.
+        Input:
+            * G: Graph
+            * G0: Subgraph
+        Output:
+            * x: indicator vector
     """
     x = []
 
@@ -707,11 +689,11 @@ def separate_lcc(G, G0):
 
 def ratio_cut(G):
     """
-            Computes ratio-cut of G based on second eigenvector of the Laplacian.
-            Input:
-                    * G: Graph
-            Output:
-                    * x: Indicator vector
+        Computes ratio-cut of G based on second eigenvector of the Laplacian.
+        Input:
+            * G: Graph
+        Output:
+            * x: Indicator vector
     """
 
     Gcc = sorted(nx.connected_component_subgraphs(G), key=len, reverse=True)
@@ -730,12 +712,13 @@ def ratio_cut(G):
 
 def eig_vis_rc(G):
     """
-            Second and third eigenvectors of the graph Laplacian. For visualization.
-            Input:
-                    * G: Graph
-            Output:
-                    * x1: Second eigenvector
-                    * x2: Third eigenvector
+        Uses the second and third eigenvectors of the graph
+        Laplacian for visualization.
+        Input:
+            * G: Graph
+        Output:
+            * x1: Second eigenvector
+            * x2: Third eigenvector
     """
     L = nx.laplacian_matrix(G).todense()
     (eigvals, eigvecs) = scipy.linalg.eigh(L, eigvals=(1, 2))
