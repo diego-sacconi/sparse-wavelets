@@ -647,14 +647,9 @@ def sweep(x, G):
 
         if den > 0:
             val = float(edges_cut) / den
-        else:
-            val = nx.number_of_nodes(G)
-
-        if val <= best_val:
-            best_cand = i
-            best_val = val
-
-    vec = []
+            if val <= best_val:
+                best_cand = i
+                best_val = val
 
     vec = np.zeros(nx.number_of_nodes(G))
 
@@ -669,7 +664,8 @@ def sweep(x, G):
 
 def separate_lcc(G, G0):
     """
-        Separates vertices in G0 (LCC) from the rest in G using indicator vector.
+        Separate vertices in G0 (LCC) from the rest in G returning
+        an indicator vector.
         Input:
             * G: Graph
             * G0: Subgraph
