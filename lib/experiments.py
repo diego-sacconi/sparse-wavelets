@@ -2,7 +2,6 @@ import time
 
 import numpy
 import matplotlib.pyplot as plt
-import networkx as nx
 
 import lib.optimal_cut as oc
 import lib.syn as syn
@@ -53,19 +52,19 @@ def size_time_experiment(sizes, balance, sparsity, energy, noise, num):
             k = int(len(G.edges()) * sparsity)
 
             start_time = time.time()
-            c = oc.one_d_search(G, F, k, ind)
+            oc.one_d_search(G, F, k, ind)
             time_slow = time.time() - start_time
 
             start_time = time.time()
-            c = oc.fast_search(G, F, k, 5, ind)
+            oc.fast_search(G, F, k, 5, ind)
             time_5 = time.time() - start_time
 
             start_time = time.time()
-            c = oc.fast_search(G, F, k, 20, ind)
+            oc.fast_search(G, F, k, 20, ind)
             time_20 = time.time() - start_time
 
             start_time = time.time()
-            c = oc.fast_search(G, F, k, 50, ind)
+            oc.fast_search(G, F, k, 50, ind)
             time_50 = time.time() - start_time
 
             res_t.append([time_slow, time_5, time_20, time_50])
@@ -153,7 +152,6 @@ def noise_acc_experiment(noise, size, sparsity, energy, balance, num):
             c = oc.one_d_search(G, F, k, ind)
             acc_slow = c["energy"]
 
-            L = nx.laplacian_matrix(G)
             c = oc.fast_search(G, F, k, 5, ind)
             acc_5 = c["energy"]
 
@@ -305,14 +303,14 @@ def plot_noise_acc_experiment(results, noise, output_file_name):
     ax = plt.subplot(111)
     ncol = 2
     width = 0.04       # the width of the bars)
-    rects1 = ax.bar(numpy.array(noise) - 2 * width, results[:, 0],
-                    width, color='cyan', label="SWT")
-    rects2 = ax.bar(numpy.array(noise) - width,
-                    results[:, 1], width, color='orangered', label="FSWT-5")
-    rects3 = ax.bar(numpy.array(noise), results[:, 2],
-                    width, color='darkgreen', label="FSWT-20")
-    rects4 = ax.bar(numpy.array(noise) + width, results[:, 3],
-                    width, color='k', label="FSWT-50")
+    ax.bar(numpy.array(noise) - 2 * width, results[:, 0],
+           width, color='cyan', label="SWT")
+    ax.bar(numpy.array(noise) - width,
+           results[:, 1], width, color='orangered', label="FSWT-5")
+    ax.bar(numpy.array(noise), results[:, 2],
+           width, color='darkgreen', label="FSWT-20")
+    ax.bar(numpy.array(noise) + width, results[:, 3],
+           width, color='k', label="FSWT-50")
 
     plt.gcf().subplots_adjust(bottom=0.15)
     ax.legend(loc='upper center', prop={'size': 20}, ncol=ncol)
@@ -341,14 +339,14 @@ def plot_energy_acc_experiment(results, energy, output_file_name):
     ind = numpy.array(list(range(4)))
     ax = plt.subplot(111)
     width = 0.2      # the width of the bars)
-    rects1 = ax.bar(ind - width, results[:, 0],
-                    width, color='cyan', label="SWT", log=True)
-    rects2 = ax.bar(ind, results[:, 1],
-                    width, color='orangered', label="FSWT-5", log=True)
-    rects3 = ax.bar(ind + width, results[:, 2],
-                    width, color='darkgreen', label="FSWT-20", log=True)
-    rects4 = ax.bar(ind + 2 * width, results[:, 3],
-                    width, color='k', label="FSWT-50", log=True)
+    ax.bar(ind - width, results[:, 0],
+           width, color='cyan', label="SWT", log=True)
+    ax.bar(ind, results[:, 1],
+           width, color='orangered', label="FSWT-5", log=True)
+    ax.bar(ind + width, results[:, 2],
+           width, color='darkgreen', label="FSWT-20", log=True)
+    ax.bar(ind + 2 * width, results[:, 3],
+           width, color='k', label="FSWT-50", log=True)
 
     plt.gcf().subplots_adjust(bottom=0.15)
     ax.legend(loc='upper left', prop={'size': 20}, ncol=ncol)
