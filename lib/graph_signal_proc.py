@@ -223,7 +223,8 @@ def hammond_wavelet_transform(w, s, T, F):
             * T: wavelet scales
             * F: graph signal
         Output:
-            * C: Hammond's wavelet transform
+            * C: Hammond's wavelet transform. (len(T) + 1) x len(F)
+                 matrix of transform coefficients
     """
     C = []
 
@@ -249,9 +250,10 @@ def hammond_wavelets_inverse(w, s, C):
         Input:
             * w: wavelets
             * s: low-pass wavelet (scaling function)
-            * C: transform
+            * C: Hammond's wavelet transform. (len(T) + 1) x len(F)
+                 matrix of transform coefficients
         Output:
-            * F: inverse
+            * F: Reconstructed signal in the vertex domain
     """
     w = np.array(w)
     Wc = np.append(w, np.array([s]), axis=0)
@@ -280,7 +282,8 @@ class Node(object):
         """
             Initialization.
             Input:
-                * data: Anything to be stored in a node
+                * data: Anything to be stored in a node. Usually
+                    only leaf nodes have data != None.
         """
         self.data = data
         self.children = []
@@ -288,9 +291,6 @@ class Node(object):
         self.counts = []
         self.diffs = []
         self.scale = 0
-        self.ftr = []
-        self.L = []
-        self.U = []
         self.cut = 0
 
         if data is None:
