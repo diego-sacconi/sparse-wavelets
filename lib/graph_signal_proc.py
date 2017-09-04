@@ -168,9 +168,6 @@ def graph_wavelets(lamb, U, N, T):
         w.append([])
         for n in range(N):
             w[t].append([])
-
-    for t in range(len(T)):
-        for n in range(N):
             for m in range(N):
                 w_t_n_m = 0
 
