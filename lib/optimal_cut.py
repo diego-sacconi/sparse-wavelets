@@ -10,18 +10,18 @@ import lib.graph_signal_proc as gsp
 
 def sweep_opt(x, F, G, k, ind):
     """
-            Sweep algorithm for sparse wavelets.
-            Input:
-                    * x: continuous indicator vector
-                    * F: graph signal
-                    * G: graph
-                    * k: max number of edges to be cut
-                    * ind: vertex index v: unique integer
-            Output:
-                    * vec: indicator vector
-                    * best_val: score value
-                    * best_edges_cut: number of edges cut
-                    * energy: wavelet energy value
+        Sweep algorithm for sparse wavelets.
+        Input:
+            * x: continuous indicator vector
+            * F: graph signal
+            * G: graph
+            * k: max number of edges to be cut
+            * ind: vertex index v: unique integer
+        Output:
+            * vec: indicator vector
+            * best_val: score value
+            * best_edges_cut: number of edges cut
+            * energy: wavelet energy value
     """
     best_val = 0.
     best_edges_cut = 0
@@ -52,7 +52,8 @@ def sweep_opt(x, F, G, k, ind):
 
         den = size_one * (total_size - size_one) * total_size
         if den > 0:
-            val = math.pow(sum_one * (total_size - size_one) - sum_two * size_one, 2) / den
+            val = math.pow(sum_one * (total_size - size_one) - sum_two *
+                           size_one, 2) / den
         else:
             val = 0
 
@@ -63,7 +64,8 @@ def sweep_opt(x, F, G, k, ind):
 
             if total_size * size_one * (total_size - size_one) > 0:
                 energy = math.pow(sum_one * (total_size - size_one) - sum_two *
-                                  size_one, 2) / (total_size * size_one * (total_size - size_one))
+                                  size_one, 2) / (total_size * size_one *
+                                                  (total_size - size_one))
             else:
                 energy = 0
 
@@ -80,11 +82,11 @@ def sweep_opt(x, F, G, k, ind):
 
 def laplacian_complete(n):
     """
-            Laplacian of a complete graph with n vertices.
-            Input:
-                    * n: size
-            Output:
-                    * C: Laplacian
+        Laplacian of a complete graph with n vertices.
+        Input:
+            * n: size
+        Output:
+            * C: Laplacian
     """
     C = np.ones((n, n))
     C = -1 * C
@@ -96,13 +98,13 @@ def laplacian_complete(n):
 
 def weighted_adjacency_complete(G, F, ind):
     """
-            Computes weighted adjacency complete matrix (w(v)-w(u))^2
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * ind: vertex index vertex: unique integer
-            Output:
-                    * A: nxn matrix
+        Computes weighted adjacency complete matrix (w(v)-w(u))^2
+        Input:
+            * G: graph
+            * F: graph signal
+            * ind: vertex index vertex: unique integer
+        Output:
+            * A: nxn matrix
     """
     A = []
     for v in G.nodes():
@@ -115,13 +117,13 @@ def weighted_adjacency_complete(G, F, ind):
 
 def fast_cac(G, F, ind):
     """
-            Computes product C*A*C, where C is the Laplacian of a complete graph and A is a pairwise squared difference matrix.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * ind: vertex index v: unique integer
-            Output:
-                    * CAC: matrix product
+        Computes product C*A*C, where C is the Laplacian of a complete graph and A is a pairwise squared difference matrix.
+        Input:
+            * G: graph
+            * F: graph signal
+            * ind: vertex index v: unique integer
+        Output:
+            * CAC: matrix product
     """
     CAC = []
     for v in G.nodes():
@@ -137,13 +139,13 @@ def fast_cac(G, F, ind):
 
 def power_method(mat, start, maxit):
     """
-            Power method implementation.
-            Input:
-                    * mat: matrix
-                    * start: initialization
-                    * maxit: number of iterations
-            Output:
-                    * vec: largest eigenvector of mat
+        Power method implementation.
+        Input:
+            * mat: matrix
+            * start: initialization
+            * maxit: number of iterations
+        Output:
+            * vec: largest eigenvector of mat
     """
     vec = np.copy(start)
     vec = vec / np.linalg.norm(vec)
@@ -156,22 +158,23 @@ def power_method(mat, start, maxit):
 
 def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     """
-            Spectral cut implementation.
-            Input:
-                    * CAC: C*A*C where C is the Laplacian of a complete graph and A is a pairwise squared difference matrix
-                    * L: graph laplacian matrix
-                    * C: laplacian complete graph
-                    * A: pairwise squared difference matrix
-                    * start: initialization
-                    * beta: regularization parameter
-                    * k: max edges cut
-                    * ind: vertex index vertex: unique integer
-            Output:
-                    * res: dictionary with following fields:
-                            - x: indicator vector
-                            - size: number of edges cut
-                            - score: cut score
-                            - energy: cut energy
+        Spectral cut implementation.
+        Input:
+            * CAC: C*A*C where C is the Laplacian of a complete graph and
+                 A is a pairwise squared difference matrix
+            * L: graph laplacian matrix
+            * C: laplacian complete graph
+            * A: pairwise squared difference matrix
+            * start: initialization
+            * beta: regularization parameter
+            * k: max edges cut
+            * ind: vertex index vertex: unique integer
+        Output:
+            * res: dictionary with following fields:
+                - x: indicator vector
+                - size: number of edges cut
+                - score: cut score
+                - energy: cut energy
     """
     isqrtCL = gsp.sqrtmi(C + beta * L)
     M = np.dot(np.dot(isqrtCL, CAC), isqrtCL)
@@ -192,14 +195,15 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
 
 def eig_vis_opt(G, F, beta):
     """
-            Computes first and second eigenvector of sqrt(C+beta*L)^T CAC sqrt(C+beta*L) matrix for visualization.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * beta: regularization parameter
-            Output:
-                    * v1: first eigenvector
-                    * v2: second eigenvector
+        Computes first and second eigenvector of
+        sqrt(C+beta*L)^T CAC sqrt(C+beta*L) matrix for visualization.
+        Input:
+            * G: graph
+            * F: graph signal
+            * beta: regularization parameter
+        Output:
+            * v1: first eigenvector
+            * v2: second eigenvector
     """
     ind = {}
     i = 0
@@ -225,27 +229,28 @@ def eig_vis_opt(G, F, beta):
 
 def trans(L, min_v, max_v):
     """
-            Chebyshev polynomial translation.
-            Input:
-                    * L: Laplacian matrix
-                    * min_v: lower bound
-                    * max_v: upper bound
-            Output:
-                    * translation
+        Chebyshev polynomial translation.
+        Input:
+            * L: Laplacian matrix
+            * min_v: lower bound
+            * max_v: upper bound
+        Output:
+            * translation
     """
-    return (float(2.) / (max_v - min_v)) * L, -(float(max_v + min_v) / (max_v - min_v))
+    return (float(2.) / (max_v - min_v)) * L, -(float(max_v + min_v) /
+                                                (max_v - min_v))
 
 
 def fun(k, n, beta, min_v, max_v, x):
     """
-            Function to be integrated in Chebyshev polynomial computation.
-            Input:
-                    * k: coefficient number
-                    * n: number of polynomials
-                    * min_v: lower bound
-                    * max_v: upper bound
-            Output:
-                    * function value
+        Function to be integrated in Chebyshev polynomial computation.
+        Input:
+            * k: coefficient number
+            * n: number of polynomials
+            * min_v: lower bound
+            * max_v: upper bound
+        Output:
+            * function value
     """
     y = 0.5 * math.cos(x) * float(max_v - min_v) + (0.5 * (max_v + min_v))
 
@@ -254,28 +259,30 @@ def fun(k, n, beta, min_v, max_v, x):
 
 def coef(k, n, beta, min_v, max_v):
     """
-            Chebyshev polynomial coefficients.
-            Input:
-                    * k: coefficient number
-                    * n: number of polynomials
-                    * min_v: lower bound
-                    * max_v: upper bound
-            Output:
-                    * coefficient
+        Chebyshev polynomial coefficients.
+        Input:
+            * k: coefficient number
+            * n: number of polynomials
+            * min_v: lower bound
+            * max_v: upper bound
+        Output:
+            * coefficient
     """
-    return float(2. * scipy.integrate.quad(lambda x: fun(k, n, beta, min_v, max_v, x), 0., math.pi)[0]) / math.pi
+    return float(2. * scipy.integrate.quad(
+        lambda x: fun(k, n, beta, min_v, max_v, x), 0., math.pi)[0]) / math.pi
 
 
 def chebyshev_approx_2d(n, beta, X, L):
     """
-            Approximates sqrt((L)^+)^T * X * sqrt((L)^+)^T using Chebyshev polynomials (twice)
-            Input:
-                    * n: number of polynomials
-                    * beta: regularization parameter
-                    * X: matrix
-                    * L: Laplacian matrix
-            Output:
-                    * P2: approximation
+        Approximates sqrt((L)^+)^T * X * sqrt((L)^+)^T using
+        Chebyshev polynomials (twice)
+        Input:
+            * n: number of polynomials
+            * beta: regularization parameter
+            * X: matrix
+            * L: Laplacian matrix
+        Output:
+            * P2: approximation
     """
     max_v = beta * L.shape[0]
     min_v = 1
@@ -310,14 +317,14 @@ def chebyshev_approx_2d(n, beta, X, L):
 
 def chebyshev_approx_1d(n, beta, x, L):
     """
-            Approximates x*sqrt(L^+) using Chebyshev polynomials.
-            Input:
-                    * n: number of polynomials
-                    * beta: regularization parameter
-                    * x: vector
-                    * L: graph Laplacian
-            Output:
-                    * P: approximation
+        Approximates x*sqrt(L^+) using Chebyshev polynomials.
+        Input:
+            * n: number of polynomials
+            * beta: regularization parameter
+            * x: vector
+            * L: graph Laplacian
+        Output:
+            * P: approximation
 
     """
     max_v = beta * L.shape[0]
@@ -340,23 +347,24 @@ def chebyshev_approx_1d(n, beta, x, L):
 
 def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
     """
-            Fast spectral cut implementation using chebyshev polynomials.
-            Input:
-                    * CAC: C*A*C where C is the Laplacian of a complete graph and A is a pairwise squared difference matrix
-                    * start: initialization
-                    * F: graph signal
-                    * G: graph
-                    * L: graph laplacian matrix
-                    * beta: regularization parameter
-                    * k: max edges cut
-                    * n: number of polynomials
-                    * ind: vertex index vertex: unique integer
-            Output:
-                    * res: dictionary with following fields:
-                            - x: indicator vector
-                            - size: number of edges cut
-                            - score: cut score
-                            - energy: cut energy
+        Fast spectral cut implementation using chebyshev polynomials.
+        Input:
+            * CAC: C*A*C where C is the Laplacian of a complete graph and
+                A is a pairwise squared difference matrix
+            * start: initialization
+            * F: graph signal
+            * G: graph
+            * L: graph laplacian matrix
+            * beta: regularization parameter
+            * k: max edges cut
+            * n: number of polynomials
+            * ind: vertex index vertex: unique integer
+        Output:
+            * res: dictionary with following fields:
+                - x: indicator vector
+                - size: number of edges cut
+                - score: cut score
+                - energy: cut energy
     """
     L = nx.laplacian_matrix(G)
     M = chebyshev_approx_2d(n, beta, CAC, L)
@@ -377,15 +385,16 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
 
 def fast_search(G, F, k, n, ind):
     """
-            Efficient version of cut computation. Does not perform 1-D search for beta.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * k: max edges to be cut
-                    * n: number of chebyshev polynomials
-                    * ind: vertex index vertex: unique integer
-            Output:
-                    * cut
+        Efficient version of cut computation.
+        Does not perform 1-D search for beta.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * n: number of chebyshev polynomials
+            * ind: vertex index vertex: unique integer
+        Output:
+            * cut
     """
     start = np.ones(nx.number_of_nodes(G))
     C = laplacian_complete(nx.number_of_nodes(G))
@@ -400,15 +409,15 @@ gr = (math.sqrt(5) - 1) / 2
 
 def one_d_search(G, F, k, ind):
     """
-            Cut computation. Perform 1-D search for beta using golden search.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * k: max edges to be cut
-                    * n: number of chebyshev polynomials
-                    * ind: vertex index vertex: unique integer
-            Output:
-                    * cut
+        Cut computation. Perform 1-D search for beta using golden search.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * n: number of chebyshev polynomials
+            * ind: vertex index vertex: unique integer
+        Output:
+            * cut
     """
     C = laplacian_complete(nx.number_of_nodes(G))
     A = weighted_adjacency_complete(G, F, ind)
@@ -457,13 +466,13 @@ def one_d_search(G, F, k, ind):
 
 def get_subgraphs(G, cut):
     """
-            Compute subgraphs generated by a cut.
-            Input:
-                    * G: Original graph
-                    * cut: cut indicator vector
-            Output:
-                    * G1: subgraph 1
-                    * G2: subgraph 2
+        Compute subgraphs generated by a cut.
+        Input:
+            * G: Original graph
+            * cut: cut indicator vector
+        Output:
+            * G1: subgraph 1
+            * G2: subgraph 2
     """
     G1 = nx.Graph()
     G2 = nx.Graph()
@@ -477,7 +486,10 @@ def get_subgraphs(G, cut):
             P2.append(v)
         i = i + 1
 
-    G1 = G.subgraph(P1)
+    G1 = G.subgraph(P1) - x: indicator vector
+        - size: number of edges cut
+        - score: cut score
+
     G2 = G.subgraph(P2)
 
     return G1, G2
@@ -485,16 +497,16 @@ def get_subgraphs(G, cut):
 
 def optimal_wavelet_basis(G, F, k, npol):
     """
-            Computation of optimal graph wavelet basis.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * k: max edges to be cut
-                    * npol: number of chebyshev polynomials, if 0 run exact version
-            Output:
-                    * root: tree root
-                    * ind: vertex index vertex: unique integer
-                    * size: number of edges cut
+        Computation of optimal graph wavelet basis.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * npol: number of chebyshev polynomials, if 0 run exact version
+        Output:
+            * root: tree root
+            * ind: vertex index vertex: unique integer
+            * size: number of edges cut
     """
 
     # Creating index
@@ -526,7 +538,8 @@ def optimal_wavelet_basis(G, F, k, npol):
 
         for i in range(0, len(cand_cuts)):
             if cand_cuts[i]["size"] + size <= k and cand_cuts[i]["score"] > 0:
-                if best_cut is None or cand_cuts[i]["score"] > best_cut["score"]:
+                if (best_cut is None or
+                        cand_cuts[i]["score"] > best_cut["score"]):
                     best_cut = cand_cuts[i]
                     b = i
         if best_cut is None:
