@@ -316,22 +316,6 @@ def set_counts(tree):
         return count
 
 
-def laplacian_complete(n):
-    """
-            Laplacian of a complete graph with n vertices.
-            Input:
-                    * n: size
-            Output:
-                    * C: Laplacian
-    """
-    C = np.ones((n, n))
-    C = -1 * C
-    D = np.diag(np.ones(n))
-    C = (n) * D + C
-
-    return C
-
-
 def sqrtmi(mat):
     """
         Computes the square-root inverse of a matrix.
