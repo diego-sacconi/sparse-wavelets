@@ -140,7 +140,6 @@ def graph_low_pass(lamb, U, T, gamma, lamb_max, K):
     for n in range(N):
         s.append([])
 
-    for n in range(N):
         for m in range(N):
             s_n_m = 0
 
