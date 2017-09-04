@@ -170,7 +170,6 @@ def graph_wavelets(lamb, U, N, T):
             w[t].append([])
             for m in range(N):
                 w_t_n_m = 0
-
                 for x in range(N):
                     w_t_n_m = w_t_n_m + U[n][x] * U[m][x] * g(T[t] * lamb[x])
 
@@ -183,10 +182,10 @@ def graph_fourier(F, U):
     """
         Graph Fourier transform.
         Input:
-            * F: Graph signal with values ordered by G.nodes()
+            * F: Signal in the vertex domain
             * U: Eigenvectors matrix
         Ouput:
-            * F_hat: Graph Fourier transform
+            * F_hat: Signal in the graph spectral domain
     """
     F_hat = []
 
@@ -200,12 +199,12 @@ def graph_fourier(F, U):
 
 def graph_fourier_inverse(F_hat, U):
     """
-            Graph Fourier inverse:
-            Input:
-                    * F_hat: Graph fourier transform
-                    * U: Eigenvectors matrix
-            Output:
-                    * F: Inverse
+        Graph Fourier inverse:
+        Input:
+            * F_hat: Signal in the graph spectral domain
+            * U: Eigenvectors matrix
+        Output:
+            * F: Signal in the vertex domain
     """
     F = np.zeros(U.shape[0])
     for v in range(U.shape[0]):
@@ -217,14 +216,14 @@ def graph_fourier_inverse(F_hat, U):
 
 def hammond_wavelet_transform(w, s, T, F):
     r"""
-            Hammond wavelet transform.
-            Input:
-                    * w: wavelets
-                    * s: low-pass wavelet (scaling function)
-                    * T: wavelet scales
-                    * F: graph signal
-            Output:
-                    * C: Hammond's wavelet transform
+        Hammond wavelet transform.
+        Input:
+            * w: wavelets
+            * s: low-pass wavelet (scaling function)
+            * T: wavelet scales
+            * F: graph signal
+        Output:
+            * C: Hammond's wavelet transform
     """
     C = []
 
@@ -246,13 +245,13 @@ def hammond_wavelet_transform(w, s, T, F):
 
 def hammond_wavelets_inverse(w, s, C):
     r"""
-            Hammond's wavelet inverse.
-            Input:
-                    * w: wavelets
-                    * s: low-pass wavelet (scaling function)
-                    * C: transform
-            Output:
-                    * F: inverse
+        Hammond's wavelet inverse.
+        Input:
+            * w: wavelets
+            * s: low-pass wavelet (scaling function)
+            * C: transform
+        Output:
+            * F: inverse
     """
     w = np.array(w)
     Wc = np.append(w, np.array([s]), axis=0)
