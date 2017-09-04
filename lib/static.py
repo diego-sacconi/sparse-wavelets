@@ -93,8 +93,7 @@ class HWavelets(object):
         self.w = graph_wavelets(self.lamb_str.real, self.U.real,
                                 len(self.G.nodes()), self.T)
         self.s = graph_low_pass(self.lamb_str.real, self.U.real,
-                                len(self.G.nodes()), self.T, gamma,
-                                lamb_max, K)
+                                self.T, gamma, lamb_max, K)
 
     def transform(self, F):
         """
