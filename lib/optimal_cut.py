@@ -117,7 +117,8 @@ def weighted_adjacency_complete(G, F, ind):
 
 def fast_cac(G, F, ind):
     """
-        Computes product C*A*C, where C is the Laplacian of a complete graph and A is a pairwise squared difference matrix.
+        Computes product C*A*C, where C is the Laplacian of a complete graph
+        and A is a pairwise squared difference matrix.
         Input:
             * G: graph
             * F: graph signal
@@ -191,40 +192,6 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     res["energy"] = energy
 
     return res
-
-
-def eig_vis_opt(G, F, beta):
-    """
-        Computes first and second eigenvector of
-        sqrt(C+beta*L)^T CAC sqrt(C+beta*L) matrix for visualization.
-        Input:
-            * G: graph
-            * F: graph signal
-            * beta: regularization parameter
-        Output:
-            * v1: first eigenvector
-            * v2: second eigenvector
-    """
-    ind = {}
-    i = 0
-
-    for v in G.nodes():
-        ind[v] = i
-        i = i + 1
-
-    C = laplacian_complete(nx.number_of_nodes(G))
-    A = weighted_adjacency_complete(G, F, ind)
-    CAC = np.dot(np.dot(C, A), C)
-    L = nx.laplacian_matrix(G).todense()
-
-    isqrtCL = gsp.sqrtmi(C + beta * L)
-    M = np.dot(np.dot(isqrtCL, CAC), isqrtCL)
-
-    (eigvals, eigvecs) = scipy.linalg.eigh(M, eigvals=(0, 1))
-    x1 = np.asarray(np.dot(eigvecs[:, 0], isqrtCL))[0, :]
-    x2 = np.asarray(np.dot(eigvecs[:, 1], isqrtCL))[0, :]
-
-    return x1, x2
 
 
 def trans(L, min_v, max_v):
@@ -486,10 +453,7 @@ def get_subgraphs(G, cut):
             P2.append(v)
         i = i + 1
 
-    G1 = G.subgraph(P1) - x: indicator vector
-        - size: number of edges cut
-        - score: cut score
-
+    G1 = G.subgraph(P1)
     G2 = G.subgraph(P2)
 
     return G1, G2

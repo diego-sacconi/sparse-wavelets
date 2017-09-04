@@ -1,6 +1,4 @@
 import math
-import random
-import sys
 from collections import deque
 
 import networkx as nx
@@ -10,7 +8,6 @@ from numpy.linalg import eigh
 import scipy.optimize
 from scipy import linalg
 import scipy.fftpack
-from sklearn.preprocessing import normalize
 
 
 def compute_eigenvectors_and_eigenvalues(L):
@@ -32,26 +29,14 @@ def compute_eigenvectors_and_eigenvalues(L):
     return U, lamb
 
 
-def s(x):
-    """
-        Cubic spline, see Hammond, D. K.,Vandergheynst, P., & Gribonval, R.
-        (2011). "Wavelets on graphs via spectral graph theory".
-        Input:
-                * x
-        Output:
-                * spline(x)
-    """
-    return -5 + 11 * x - 6 * pow(x, 2) + pow(x, 3)
-
-
 def g(x):
     """
         Wavelet generating kernel, see Hammond, D. K.,Vandergheynst, P.,
         & Gribonval, R. (2011). "Wavelets on graphs via spectral graph theory".
         Input:
-                * x
+            * x
         Output:
-                * kernel of x
+            * kernel of x
     """
     a = 2
     b = 2
@@ -61,7 +46,7 @@ def g(x):
     if x < x_1:
         return pow(x_1, -a) * pow(x, a)
     elif x <= x_2 and x >= x_1:
-        return s(x)
+        return -5 + 11 * x - 6 * pow(x, 2) + pow(x, 3)
     else:
         return pow(x_2, b) * pow(x, -b)
 
@@ -310,23 +295,6 @@ class Node(object):
         self.count = self.count + obj.count
 
 
-def get_leaves(tree, part, G):
-    """
-        Recursively gets all the leaves of a given tree.
-        Input:
-            * tree: tree node
-            * part: list that will contain children
-            * G: graph
-        Output:
-            * None
-    """
-    if tree.data is not None:
-        part.append(tree.data)
-    else:
-        for c in tree.children:
-            get_leaves(c, part, G)
-
-
 def set_counts(tree):
     """
         Sets counts for intermediate nodes in the tree.
@@ -348,227 +316,6 @@ def set_counts(tree):
         return count
 
 
-def partitions_level_rec(tree, level, G, l, partitions):
-    """
-        Recursively extracts partitions from the current level "l"
-        up to a certain level "level" in the tree.
-        Input:
-            * tree: tree
-            * level: max level
-            * G: graph
-            * l: current level
-            * partitions: list of partitions recovered
-        Output:
-            None
-    """
-    # Stopping condition
-    if l >= level:
-        part = []
-        get_leaves(tree, part, G)
-        if len(part) > 0:
-            partitions.append(part)
-    else:
-        if tree.data is None:
-            for c in tree.children:
-                partitions_level_rec(c, level, G, l + 1, partitions)
-        else:
-            partitions.append([tree.data])
-
-
-def partitions_level(tree, level, G):
-    """
-        Recovers partitions up to a certain level of the three.
-        Input:
-            * tree: tree
-            * level: level
-            * G: graph
-        Output:
-            * partitions: set of vertices in each partition
-    """
-    partitions = []
-    partitions_level_rec(tree, level, G, 0, partitions)
-
-    return partitions
-
-
-def distance_matrix(G, ind):
-    """
-        Builds graph distance matrix according to an index
-        Input:
-            * G: graph
-            * ind: dictionary vertex: unique integer
-        Output:
-            * M: matrix
-    """
-    M = []
-    dists = nx.all_pairs_dijkstra_path_length(G)
-
-    M = np.zeros((len(G.nodes()), len(G.nodes())))
-
-    for v1 in G.nodes():
-        for v2 in G.nodes():
-            M[ind[v1]][ind[v2]] = dists[v1][v2]
-
-    return M
-
-
-def select_centroids(M, radius):
-    """
-        Selects half of the vertices as centroids.
-        Input:
-            * M
-            * radius
-        Output:
-            * centroids
-    """
-    nodes = list(range(M.shape[0]))
-    random.shuffle(nodes)
-    nodes = nodes[:int(len(nodes) / 2)]
-    cents = [nodes[0]]
-    mn = sys.float_info.min
-
-    for candidate_cent in nodes[1:]:
-        add = True
-        for cent in cents:
-            # If the candidate centroid is too close to a centroid
-            # it is not added to the list of centroids
-            if M[cent][candidate_cent] <= radius * mn:
-                add = False
-                break
-        if add:
-            cents.append(candidate_cent)
-
-    return cents
-
-
-def coarse_matrix(M, H, cents, nodes):
-    """
-            Makes matrix coarser based on centroids.
-            Input:
-                    * M: distance matrix
-                    * H:
-                    * cents: centroids
-                    * nodes: list of nodes
-            Output:
-                    * Q: new matrix
-                    * J
-                    * new_nodes: new node list
-    """
-    Q = np.zeros((len(cents), len(cents)))
-    J = []
-    assigns = []
-    new_nodes = []
-
-    for i in range(len(cents)):
-        J.append([])
-        assigns.append([])
-    new_nodes.append(Node(None))
-
-    for i in range(M.shape[0]):
-        min_dist = M[i][cents[0]]
-        min_cent = 0
-
-        for j in range(1, len(cents)):
-            if M[i][cents[j]] < min_dist:
-                min_dist = M[i][cents[j]]
-                min_cent = j
-
-        J[min_cent].append(H[i])
-        assigns[min_cent].append(i)
-        new_nodes[min_cent].add_child(nodes[i])
-
-    for i in range(len(cents)):
-        if len(new_nodes[i].children) == 1:
-            new_nodes[i] = new_nodes[i].children[0]
-
-        for j in range(len(cents)):
-            if i != j:
-                for m in assigns[i]:
-                    for k in assigns[j]:
-                        Q[i][j] = Q[i][j] + pow(M[m][k], 2)
-
-    Q = normalize(Q, axis=1, norm='l1')
-
-    return Q, J, new_nodes
-
-
-def get_partitions(x, node_list):
-    """
-        Gets partitions given indicator vector.
-            if x < 0: partition 1
-            if x => 0: partition 2
-        Input:
-            * x: indicator vector
-            * node_list: list of nodes
-        Output:
-            * P1: partition 1
-            * P2: partition 2
-    """
-    P1 = []
-    P2 = []
-
-    for i in range(x.shape[0]):
-        if x[i] < 0:
-            P1.append(node_list[i])
-        else:
-            P2.append(node_list[i])
-
-    return P1, P2
-
-
-def get_new_laplacians(L, P1, P2, ind):
-    """
-            Compute new Laplacian matrices for partitions P1 and P2.
-            Input:
-                    * L: Higher-level laplacian
-                    * P1: partition 1
-                    * P2: partition 2
-                    * ind: node index vertex: unique integer
-            Output:
-                    * L1: Laplacian P1
-                    * L2: Laplacian P2
-    """
-    data = []
-    row = []
-    col = []
-
-    for i in range(len(P1)):
-        d = 0
-        for j in range(len(P1)):
-            if i != j and L[ind[P1[i]], ind[P1[j]]] != 0:
-                row.append(i)
-                col.append(j)
-                data.append(float(L[ind[P1[i]], ind[P1[j]]]))
-                d = d - L[ind[P1[i]], ind[P1[j]]]
-
-        row.append(i)
-        col.append(i)
-        data.append(float(d))
-
-    L1 = scipy.sparse.csr_matrix((data, (row, col)), shape=(len(P1), len(P1)))
-
-    data = []
-    row = []
-    col = []
-
-    for i in range(len(P2)):
-        d = 0
-        for j in range(len(P2)):
-            if i != j and L[ind[P2[i]], ind[P2[j]]] != 0:
-                row.append(i)
-                col.append(j)
-                data.append(float(L[ind[P2[i]], ind[P2[j]]]))
-                d = d - L[ind[P2[i]], ind[P2[j]]]
-
-        row.append(i)
-        col.append(i)
-        data.append(float(d))
-
-    L2 = scipy.sparse.csr_matrix((data, (row, col)), shape=(len(P2), len(P2)))
-
-    return L1, L2
-
-
 def laplacian_complete(n):
     """
             Laplacian of a complete graph with n vertices.
@@ -583,22 +330,6 @@ def laplacian_complete(n):
     C = (n) * D + C
 
     return C
-
-
-def sqrtm(mat):
-    """
-        Matrix square root.
-        Input:
-            * mat: matrix
-        Output:
-            * matrix square root
-    """
-    eigvals, eigvecs = eigh(mat)
-
-    eigvecs = eigvecs[:, eigvals > 0]
-    eigvals = eigvals[eigvals > 0]
-
-    return dot(eigvecs, dot(diag(sqrt(eigvals)), eigvecs.T))
 
 
 def sqrtmi(mat):
@@ -706,25 +437,6 @@ def ratio_cut(G):
     return np.array(x)
 
 
-def eig_vis_rc(G):
-    """
-        Uses the second and third eigenvectors of the graph
-        Laplacian for visualization.
-        Input:
-            * G: Graph
-        Output:
-            * x1: Second eigenvector
-            * x2: Third eigenvector
-    """
-    L = nx.laplacian_matrix(G).todense()
-    (eigvals, eigvecs) = scipy.linalg.eigh(L, eigvals=(1, 2))
-
-    x1 = np.asarray(eigvecs[:, 0])
-    x2 = np.asarray(eigvecs[:, 1])
-
-    return x1, x2
-
-
 def get_subgraphs(G, cut):
     """
         Compute subgraphs generated by a cut.
@@ -811,38 +523,6 @@ def ratio_cut_hierarchy(G):
     rc_recursive(root, G, ind)
 
     return root, ind
-
-
-def gavish_hierarchy(G, radius):
-    """
-            Builds Gavish's hierarchy of a graph.
-            Input:
-                    * G: graph
-                    * radius: radius
-            Output:
-                    * tree root
-                    * ind: vertex index v: unique integer
-    """
-    H = []
-    nodes = []
-    ind = {}
-    i = 0
-    for v in G.nodes():
-        ind[v] = i
-        nodes.append(Node(i))
-        H.append(i)
-        i = i + 1
-
-    M = distance_matrix(G, ind)
-
-    while M.shape[0] > 1:
-        cents = select_centroids(M, radius)
-        Q, J, new_nodes = coarse_matrix(M, H, cents, nodes)
-        M = Q
-        H = J
-        nodes = new_nodes
-
-    return nodes[0], ind
 
 
 def compute_coefficients(tree, F):
@@ -943,29 +623,6 @@ def get_coefficients(tree, wtr):
 
         for i in range(len(node.children)):
             Q.append(node.children[i])
-
-
-def get_cut_sizes(tree):
-    """
-            Recovers cut sizes from tree.
-            Input:
-                    * tree
-            Output:
-                    * None
-    """
-    Q = deque()
-    cut_sizes = []
-
-    Q.append(tree)
-
-    while len(Q) > 0:
-        node = Q.popleft()
-        cut_sizes.append(node.cut)
-
-        for i in range(len(node.children)):
-            Q.append(node.children[i])
-
-    return cut_sizes
 
 
 def set_coefficients(tree, wtr):
