@@ -280,19 +280,20 @@ class Node(object):
 
     def __init__(self, data):
         """
-            Initialization.
             Input:
-                * data: Anything to be stored in a node. Usually
-                    only leaf nodes have data != None.
+                * data: Anything to be stored in a node.
+                        Usually only leaf nodes have data != None
+                        data != None often used as stopping condition
         """
         self.data = data
         self.children = []
         self.avgs = []
         self.counts = []
         self.diffs = []
+        # Level on the tree. The root has scale = 0
         self.scale = 0
         self.cut = 0
-
+        # count: number of leaves (data != None) in the subtree
         if data is None:
             self.count = 0
         else:
@@ -309,9 +310,9 @@ class Node(object):
         self.count = self.count + obj.count
 
 
-def get_children(tree, part, G):
+def get_leaves(tree, part, G):
     """
-        Recursively gets all the children of a given node.
+        Recursively gets all the leaves of a given tree.
         Input:
             * tree: tree node
             * part: list that will contain children
@@ -320,10 +321,10 @@ def get_children(tree, part, G):
             * None
     """
     if tree.data is not None:
-        part.append(G.nodes()[tree.data])
+        part.append(tree.data)
     else:
         for c in tree.children:
-            get_children(c, part, G)
+            get_leaves(c, part, G)
 
 
 def set_counts(tree):
@@ -349,21 +350,21 @@ def set_counts(tree):
 
 def partitions_level_rec(tree, level, G, l, partitions):
     """
-        Recursively extracts partitions from the current level
-        up to a certain level in the tree.
+        Recursively extracts partitions from the current level "l"
+        up to a certain level "level" in the tree.
         Input:
             * tree: tree
             * level: max level
             * G: graph
             * l: current level
-            * partitions: partitions recovered
+            * partitions: list of partitions recovered
         Output:
             None
     """
     # Stopping condition
     if l >= level:
         part = []
-        get_children(tree, part, G)
+        get_leaves(tree, part, G)
         if len(part) > 0:
             partitions.append(part)
     else:
@@ -390,9 +391,9 @@ def partitions_level(tree, level, G):
     return partitions
 
 
-def build_matrix(G, ind):
+def distance_matrix(G, ind):
     """
-        Builds graph distance matrix.
+        Builds graph distance matrix according to an index
         Input:
             * G: graph
             * ind: dictionary vertex: unique integer
@@ -426,14 +427,16 @@ def select_centroids(M, radius):
     cents = [nodes[0]]
     mn = sys.float_info.min
 
-    for i in range(1, len(nodes)):
+    for candidate_cent in nodes[1:]:
         add = True
-        for j in range(len(cents)):
-            if M[cents[j]][nodes[i]] <= radius * mn:
+        for cent in cents:
+            # If the candidate centroid is too close to a centroid
+            # it is not added to the list of centroids
+            if M[cent][candidate_cent] <= radius * mn:
                 add = False
                 break
         if add:
-            cents.append(nodes[i])
+            cents.append(candidate_cent)
 
     return cents
 
@@ -830,7 +833,7 @@ def gavish_hierarchy(G, radius):
         H.append(i)
         i = i + 1
 
-    M = build_matrix(G, ind)
+    M = distance_matrix(G, ind)
 
     while M.shape[0] > 1:
         cents = select_centroids(M, radius)
