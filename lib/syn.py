@@ -6,7 +6,11 @@ import numpy as np
 from scipy import linalg
 
 
-def synthetic_graph(size, num_edges, sparsity, energy, balance, noise):
+def synthetic_graph(size, num_edges, sparsity, energy, balance, noise,
+                    seed=None):
+    if seed:
+        random.seed(seed)
+
     size_part_a = int(math.ceil(float(size * balance) / 2))
     size_part_b = size - size_part_a
     F = []
@@ -91,7 +95,11 @@ def compute_embedding(distances, radius, graph):
     return np.array(B)
 
 
-def generate_dyn_cascade(G, diam, duration, n):
+def generate_dyn_cascade(G, diam, duration, n, seed=None):
+
+    if seed:
+        random.seed(seed)
+
     Fs = []
 
     for j in range(n):
@@ -112,7 +120,9 @@ def generate_dyn_cascade(G, diam, duration, n):
     return np.array(Fs)
 
 
-def generate_dyn_heat(G, s, jump, n):
+def generate_dyn_heat(G, s, jump, n, seed=None):
+    if seed:
+        random.seed(seed)
     Fs = []
     L = nx.normalized_laplacian_matrix(G)
     L = L.todense()
@@ -139,9 +149,10 @@ def generate_dyn_heat(G, s, jump, n):
     return np.array(Fs)[1:]
 
 
-def generate_dyn_gaussian_noise(G, n):
+def generate_dyn_gaussian_noise(G, n, seed=None):
+    if seed:
+        np.random.seed(seed)
     Fs = []
-
     for j in range(n):
         F = np.random.rand(len(G.nodes()))
         Fs.append(F)
@@ -149,7 +160,11 @@ def generate_dyn_gaussian_noise(G, n):
     return np.array(Fs)
 
 
-def generate_dyn_bursty_noise(G, n):
+def generate_dyn_bursty_noise(G, n, seed1=None, seed2=None):
+    if seed1:
+        random.seed(seed1)
+    if seed2:
+        np.random.seed(seed2)
     Fs = []
     bursty_beta = 1
     non_bursty_beta = 1000
@@ -177,7 +192,11 @@ def generate_dyn_bursty_noise(G, n):
     return np.array(Fs)
 
 
-def generate_dyn_indep_cascade(G, s, p):
+def generate_dyn_indep_cascade(G, s, p, seed1=None, seed2=None):
+    if seed1:
+        random.seed(seed1)
+    if seed2:
+        np.random.seed(seed2)
     Fs = []
 
     seeds = np.random.choice(len(G.nodes()), s, replace=False)
@@ -219,7 +238,11 @@ def generate_dyn_indep_cascade(G, s, p):
     return np.array(Fs)
 
 
-def generate_dyn_linear_threshold(G, s):
+def generate_dyn_linear_threshold(G, s, seed1=None, seed2=None):
+    if seed1:
+        random.seed(seed1)
+    if seed2:
+        np.random.seed(seed2)
     Fs = []
 
     seeds = np.random.choice(len(G.nodes()), s, replace=False)
