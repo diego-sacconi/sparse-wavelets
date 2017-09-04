@@ -1,21 +1,11 @@
-import networkx
 import math
-import scipy.optimize
-import numpy
-import sys
-from scipy import linalg
-import matplotlib.pyplot as plt
-from IPython.display import Image
-import pywt
-import scipy.fftpack
-import random
 import operator
-import copy
-from collections import deque
-from sklearn.preprocessing import normalize
-from sklearn.cluster import SpectralClustering
-from lib.graph_signal_proc import *
-from lib.optimal_cut import *
+
+import numpy as np
+import networkx as nx
+
+import lib.graph_signal_proc as gsp
+import lib.optimal_cut as oc
 
 
 class Fourier(object):
@@ -28,19 +18,19 @@ class Fourier(object):
 
     def set_graph(self, _G):
         self.G = _G
-        L = networkx.laplacian_matrix(self.G)
+        L = nx.laplacian_matrix(self.G)
         L = L.todense()
-        self.U, self.lamb_str = compute_eigenvectors_and_eigenvalues(L)
+        self.U, self.lamb_str = gsp.compute_eigenvectors_and_eigenvalues(L)
 
     def transform(self, F):
         """
         """
-        return graph_fourier(F, self.U)
+        return gsp.graph_fourier(F, self.U)
 
     def inverse(self, ftr):
         """
         """
-        return graph_fourier_inverse(ftr, self.U)
+        return gsp.graph_fourier_inverse(ftr, self.U)
 
     def drop_frequency(self, ftr, n):
         """
@@ -56,9 +46,10 @@ class Fourier(object):
         for i in range(ftr.shape[0]):
             coeffs[i] = abs(ftr[i])
 
-        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1),
+                               reverse=True)
 
-        ftr_copy = numpy.copy(ftr)
+        ftr_copy = np.copy(ftr)
 
         for k in range(n, len(sorted_coeffs)):
             i = sorted_coeffs[k][0]
@@ -80,30 +71,30 @@ class HWavelets(object):
         """
         """
         self.G = _G
-        L = networkx.normalized_laplacian_matrix(self.G)
+        L = nx.normalized_laplacian_matrix(self.G)
         L = L.todense()
-        self.U, self.lamb_str = compute_eigenvectors_and_eigenvalues(L)
+        self.U, self.lamb_str = gsp.compute_eigenvectors_and_eigenvalues(L)
         lamb_max = max(self.lamb_str.real)
 
         # default parameters defined by author
         K = 100
         J = 4
-        gamma = comp_gamma()
-        self.T = comp_scales(lamb_max, K, J)
-        self.w = graph_wavelets(self.lamb_str.real, self.U.real,
-                                len(self.G.nodes()), self.T)
-        self.s = graph_low_pass(self.lamb_str.real, self.U.real,
-                                self.T, gamma, lamb_max, K)
+        gamma = gsp.comp_gamma()
+        self.T = gsp.comp_scales(lamb_max, K, J)
+        self.w = gsp.graph_wavelets(self.lamb_str.real, self.U.real,
+                                    len(self.G.nodes()), self.T)
+        self.s = gsp.graph_low_pass(self.lamb_str.real, self.U.real,
+                                    self.T, gamma, lamb_max, K)
 
     def transform(self, F):
         """
         """
-        return hammond_wavelet_transform(self.w, self.s, self.T, F)
+        return gsp.hammond_wavelet_transform(self.w, self.s, self.T, F)
 
     def inverse(self, wtr):
         """
         """
-        return hammond_wavelets_inverse(self.w, self.s, wtr)
+        return gsp.hammond_wavelets_inverse(self.w, self.s, wtr)
 
     def drop_frequency(self, wtr, n):
         """
@@ -119,9 +110,10 @@ class HWavelets(object):
             for j in range(len(wtr[i])):
                 coeffs[(i, j)] = abs(wtr[i][j])
 
-        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1),
+                               reverse=True)
 
-        wtr_copy = numpy.copy(wtr)
+        wtr_copy = np.copy(wtr)
 
         for k in range(n, len(sorted_coeffs)):
             i = sorted_coeffs[k][0][0]
@@ -144,17 +136,17 @@ class GRCWavelets(object):
         """
         """
         self.G = _G
-        (self.tree, self.ind) = ratio_cut_hierarchy(self.G)
+        (self.tree, self.ind) = gsp.ratio_cut_hierarchy(self.G)
 
     def transform(self, F):
         """
         """
-        return gavish_wavelet_transform(self.tree, self.ind, self.G, F)
+        return gsp.gavish_wavelet_transform(self.tree, self.ind, self.G, F)
 
     def inverse(self, wtr):
         """
         """
-        return gavish_wavelet_inverse(self.tree, self.ind, self.G, wtr)
+        return gsp.gavish_wavelet_inverse(self.tree, self.ind, self.G, wtr)
 
     def drop_frequency(self, wtr, n):
         """
@@ -169,9 +161,10 @@ class GRCWavelets(object):
         for i in range(len(wtr)):
             coeffs[i] = abs(wtr[i])
 
-        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1),
+                               reverse=True)
 
-        wtr_copy = numpy.copy(wtr)
+        wtr_copy = np.copy(wtr)
 
         for k in range(n, len(sorted_coeffs)):
             i = sorted_coeffs[k][0]
@@ -211,27 +204,31 @@ class OptWavelets(object):
     def inverse(self, wtr):
         """
         """
-        return gavish_wavelet_inverse(self.tree, self.ind, self.G, wtr)
+        return gsp.gavish_wavelet_inverse(self.tree, self.ind, self.G, wtr)
 
     def drop_frequency(self, wtr, n):
         coeffs = {}
 
         k = n
         # Computing optimal basis
-        (self.tree, self.ind, s) = optimal_wavelet_basis(self.G, self.F, k, self.n)
+        (self.tree, self.ind, s) = oc.optimal_wavelet_basis(self.G, self.F,
+                                                            k, self.n)
 
         # Gavish's wavelet transform
-        tr = gavish_wavelet_transform(self.tree, self.ind, self.G, self.F)
+        tr = gsp.gavish_wavelet_transform(self.tree, self.ind, self.G, self.F)
 
         for i in range(len(tr)):
             coeffs[i] = abs(tr[i])
 
-        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_coeffs = sorted(coeffs.items(), key=operator.itemgetter(1),
+                               reverse=True)
 
-        wtr_copy = numpy.copy(tr)
+        wtr_copy = np.copy(tr)
 
-        # Computing number of integers required to represent the edges cut (rounded)
-        v = n - int(math.ceil(float(s * math.log2(len(self.G.edges()))) / 64))
+        # Computing number of integers required to represent the
+        # edges cut (rounded)
+        v = n - int(math.ceil(float(s *
+                                    math.log2(len(self.G.edges()))) / 64))
 
         for k in range(v, len(sorted_coeffs)):
             i = sorted_coeffs[k][0]
