@@ -118,22 +118,9 @@ def graph_low_pass(lamb, U, T, gamma, lamb_max, K):
 
     N = len(lamb)
 
-    h_vector_form = [h(T[-1] * lamb[x], gamma, lamb_max, K) for x in range(N)]
+    h_vector = [h(T[-1] * lamb[x], gamma, lamb_max, K) for x in range(N)]
 
-    s = []
-
-    for n in range(N):
-        s.append([])
-
-        for m in range(N):
-            s_n_m = 0
-
-            for x in range(N):
-                s_n_m = s_n_m + U[n][x] * U[m][x] * h_vector_form[x]
-
-            s[n].append(s_n_m)
-
-    return s
+    return np.dot(U, np.dot(np.diag(h_vector), U.T))
 
 
 def graph_wavelets(lamb, U, N, T):
@@ -147,18 +134,12 @@ def graph_wavelets(lamb, U, N, T):
         Output:
             * w: wavelets as a len(T) x N x N matrix
     """
+
     w = []
 
     for t in range(len(T)):
-        w.append([])
-        for n in range(N):
-            w[t].append([])
-            for m in range(N):
-                w_t_n_m = 0
-                for x in range(N):
-                    w_t_n_m = w_t_n_m + U[n][x] * U[m][x] * g(T[t] * lamb[x])
-
-                w[t][n].append(w_t_n_m)
+        g_vector = [g(T[t] * lamb[x]) for x in range(N)]
+        w.append([np.dot(U, np.dot(np.diag(g_vector), U.T))])
 
     return w
 
