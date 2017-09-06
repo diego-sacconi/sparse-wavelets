@@ -195,17 +195,10 @@ def hammond_wavelet_transform(w, s, T, F):
     C = []
 
     for i in range(len(T)):
-        C.append([])
         # Each wavelet is represented by an N x N matrix
-        for j in range(len(F)):
-            dotp = np.dot(F, w[i][j])
-            C[i].append(dotp)
-
-    C.append([])
+        C.append(np.dot(F, w[i].T))
     # Append output of scaling function application at the end
-    for j in range(len(F)):
-        dotp = np.dot(F, s[j])
-        C[-1].append(dotp)
+    C.append(np.dot(F, s.T))
 
     return np.array(C)
 
