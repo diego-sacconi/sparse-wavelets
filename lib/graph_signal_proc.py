@@ -116,9 +116,7 @@ def graph_low_pass(lamb, U, T, gamma, lamb_max, K):
             * s: Low-pass filter as a N x N matrix
     """
 
-    N = len(lamb)
-
-    h_vector = [h(T[-1] * lamb[x], gamma, lamb_max, K) for x in range(N)]
+    h_vector = [h(T[-1] * l, gamma, lamb_max, K) for l in lamb]
 
     return np.dot(U, np.dot(np.diag(h_vector), U.T))
 
@@ -138,10 +136,10 @@ def graph_wavelets(lamb, U, N, T):
     w = []
 
     for t in range(len(T)):
-        g_vector = [g(T[t] * lamb[x]) for x in range(N)]
-        w.append([np.dot(U, np.dot(np.diag(g_vector), U.T))])
+        g_vector = [g(T[t] * l) for l in lamb]
+        w.append(np.dot(U, np.dot(np.diag(g_vector), U.T)))
 
-    return w
+    return np.asarray(w)
 
 
 def graph_fourier(F, U):
@@ -200,7 +198,7 @@ def hammond_wavelet_transform(w, s, T, F):
     # Append output of scaling function application at the end
     C.append(np.dot(F, s.T))
 
-    return np.array(C)
+    return np.asarray(C)
 
 
 def hammond_wavelets_inverse(w, s, C):
