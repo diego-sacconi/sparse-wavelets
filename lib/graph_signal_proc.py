@@ -212,17 +212,9 @@ def hammond_wavelets_inverse(w, s, C):
         Output:
             * F: Reconstructed signal in the vertex domain
     """
-    w = np.array(w)
+    nC = np.ravel(C)
     Wc = np.append(w, np.array([s]), axis=0)
-    # Creates copies of the inputs
-    nWc = Wc[0, :, :]
-    nC = C[0]
-    for i in range(1, Wc.shape[0]):
-        nWc = np.append(nWc, Wc[i, :, :], axis=0)
-        nC = np.append(nC, C[i], axis=0)
-
-    nWc = np.array(nWc)
-    nC = np.array(nC)
+    nWc = Wc.reshape(Wc.shape[0] * Wc.shape[1], Wc.shape[2])
     # Search a least square solution F, solving:
     # nWc F = nC
     F = np.linalg.lstsq(nWc, nC)[0]
