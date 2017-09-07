@@ -236,8 +236,6 @@ class Node(object):
         """
         self.data = data
         self.children = []
-        self.avgs = []
-        self.counts = []
         self.diffs = []
         # Level on the tree. The root has scale = 0
         self.scale = 0
@@ -479,11 +477,8 @@ def compute_coefficients(tree, F):
             count = count + tree.children[i].count
 
             if i > 0:
-                tree.avgs.append(float(avg) / count)
-                tree.counts.append(count)
                 tree.diffs.append(2 * tree.children[i].count *
                                   (tree.children[i].avg - float(avg) / count))
-        tree.avgs = list(reversed(tree.avgs))
         tree.avg = float(avg) / tree.count
     else:
         tree.avg = F[tree.data]
@@ -511,9 +506,7 @@ def reconstruct_values(tree, F):
                 reconstruct_values(tree.children[i], F)
                 count = count - tree.children[i].count
                 avg = avg - tree.children[i].avg * tree.children[i].count
-                tree.avgs.append(float(avg) / count)
 
-        tree.avgs = list(reversed(tree.avgs))
     else:
         F[tree.data] = tree.avg
 
@@ -528,7 +521,6 @@ def clear_tree(tree):
     """
     tree.avg = 0
     tree.diffs = []
-    tree.avgs = []
 
     if tree.data is None:
         for i in range(len(tree.children)):
