@@ -19,100 +19,47 @@ def sweep_opt(x, F, G, k, ind):
             * ind: vertex index v: unique integer
         Output:
             * vec: indicator vector
-            * best_val: score value
+            * best_energy: max energy value
             * best_edges_cut: number of edges cut
-            * energy: wavelet energy value
     """
-    best_val = 0.
-    best_edges_cut = 0
     sorted_x = np.argsort(x)
-    size_one = 0
-    sum_one = 0
-    sum_two = 0
+    part_one = set()
+    N = nx.number_of_nodes(G)
+    best_energy = 0.
+    edges_cut = 0
+    best_edges_cut = 0
+    sum_one = 0     # sum of the graph signal values for the nodes in part_one
+    sum_two = 0     # sum of the graph signal values for the nodes in part_two
 
     for v in G.nodes():
-        sum_two = sum_two + F[ind[v]]
+        sum_two += F[ind[v]]
 
-    edges_cut = 0
-    nodes_one = {}
-    total_size = nx.number_of_nodes(G)
-
-    for i in range(x.shape[0]):
-        size_one = size_one + 1
-        sum_one = sum_one + F[ind[G.nodes()[sorted_x[i]]]]
-        sum_two = sum_two - F[ind[G.nodes()[sorted_x[i]]]]
-
-        nodes_one[G.nodes()[sorted_x[i]]] = True
+    for i in range(N):
+        part_one.add(G.nodes()[sorted_x[i]])
+        sum_one += F[ind[G.nodes()[sorted_x[i]]]]
+        sum_two -= F[ind[G.nodes()[sorted_x[i]]]]
 
         for v in G.neighbors(G.nodes()[sorted_x[i]]):
-            if v not in nodes_one:
+            if v not in part_one:
                 edges_cut = edges_cut + 1
             else:
                 edges_cut = edges_cut - 1
 
-        den = size_one * (total_size - size_one) * total_size
+        den = N * len(part_one) * (N - len(part_one))
         if den > 0:
-            val = math.pow(sum_one * (total_size - size_one) - sum_two *
-                           size_one, 2) / den
+            energy = math.pow(sum_one * (N - len(part_one)) - sum_two *
+                              len(part_one), 2) / den
         else:
-            val = 0
+            energy = 0
 
-        if val >= best_val and edges_cut <= k:
+        if energy >= best_energy and edges_cut <= k:
             best_cand = i
-            best_val = val
+            best_energy = energy
             best_edges_cut = edges_cut
 
-            if total_size * size_one * (total_size - size_one) > 0:
-                energy = math.pow(sum_one * (total_size - size_one) - sum_two *
-                                  size_one, 2) / (total_size * size_one *
-                                                  (total_size - size_one))
-            else:
-                energy = 0
+    vec = np.array([-1. if i <= best_cand else 1. for i in sorted_x])
 
-    vec = np.zeros(total_size)
-
-    for i in range(x.shape[0]):
-        if i <= best_cand:
-            vec[sorted_x[i]] = -1.
-        else:
-            vec[sorted_x[i]] = 1.
-
-    return vec, best_val, best_edges_cut, energy
-
-
-def laplacian_complete(n):
-    """
-        Laplacian of a complete graph with n vertices.
-        Input:
-            * n: size
-        Output:
-            * C: Laplacian
-    """
-    C = np.ones((n, n))
-    C = -1 * C
-    D = np.diag(np.ones(n))
-    C = (n) * D + C
-
-    return C
-
-
-def weighted_adjacency_complete(G, F, ind):
-    """
-        Computes weighted adjacency complete matrix (w(v)-w(u))^2
-        Input:
-            * G: graph
-            * F: graph signal
-            * ind: vertex index vertex: unique integer
-        Output:
-            * A: nxn matrix
-    """
-    A = []
-    for v in G.nodes():
-        A.append([])
-        for u in G.nodes():
-            A[-1].append(pow(F[ind[v]] - F[ind[u]], 2))
-
-    return np.array(A)
+    return vec, best_energy, best_edges_cut
 
 
 def fast_cac(G, F, ind):
@@ -174,7 +121,6 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
             * res: dictionary with following fields:
                 - x: indicator vector
                 - size: number of edges cut
-                - score: cut score
                 - energy: cut energy
     """
     isqrtCL = gsp.sqrtmi(C + beta * L)
@@ -183,12 +129,11 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     (eigvals, eigvecs) = scipy.linalg.eigh(M, eigvals=(0, 0))
     x = np.asarray(np.dot(eigvecs[:, 0], isqrtCL))[0, :]
 
-    (x, score, size, energy) = sweep_opt(x, F, G, k, ind)
+    (x, energy, size) = sweep_opt(x, F, G, k, ind)
 
     res = {}
     res["x"] = np.array(x)
     res["size"] = size
-    res["score"] = score
     res["energy"] = energy
 
     return res
@@ -330,7 +275,6 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
             * res: dictionary with following fields:
                 - x: indicator vector
                 - size: number of edges cut
-                - score: cut score
                 - energy: cut energy
     """
     L = nx.laplacian_matrix(G)
@@ -339,15 +283,49 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
     eigvec = power_method(-M, start, 10)
     x = chebyshev_approx_1d(n, beta, eigvec, L)
 
-    (x, score, size, energy) = sweep_opt(x, F, G, k, ind)
+    (x, energy, size) = sweep_opt(x, F, G, k, ind)
 
     res = {}
     res["x"] = np.array(x)
     res["size"] = size
-    res["score"] = score
     res["energy"] = energy
 
     return res
+
+
+def laplacian_complete(n):
+    """
+        Laplacian of a complete graph with n vertices.
+        Input:
+            * n: size
+        Output:
+            * C: Laplacian
+    """
+    C = np.ones((n, n))
+    C = -1 * C
+    D = np.diag(np.ones(n))
+    C = (n) * D + C
+
+    return C
+
+
+def weighted_adjacency_complete(G, F, ind):
+    """
+        Computes weighted adjacency complete matrix (w(v)-w(u))^2
+        Input:
+            * G: graph
+            * F: graph signal
+            * ind: vertex index vertex: unique integer
+        Output:
+            * A: nxn matrix
+    """
+    A = []
+    for v in G.nodes():
+        A.append([])
+        for u in G.nodes():
+            A[-1].append(pow(F[ind[v]] - F[ind[u]], 2))
+
+    return np.array(A)
 
 
 def fast_search(G, F, k, n, ind):
@@ -364,8 +342,6 @@ def fast_search(G, F, k, n, ind):
             * cut
     """
     start = np.ones(nx.number_of_nodes(G))
-    C = laplacian_complete(nx.number_of_nodes(G))
-    A = weighted_adjacency_complete(G, F, ind)
     CAC = fast_cac(G, F, ind)
 
     return cheb_spectral_cut(CAC, start, F, G, 1., k, n, ind)
@@ -410,7 +386,7 @@ def one_d_search(G, F, k, ind):
         resd = spectral_cut(CAC, L, C, A, start, F, G, d, k, ind)
 
         if resc["size"] <= k:
-            if resc["score"] > resd["score"]:
+            if resc["energy"] > resd["energy"]:
                 start = np.array(resc["x"])
                 b = d
                 d = c
@@ -473,9 +449,9 @@ def optimal_wavelet_basis(G, F, k, npol):
         b = 0
 
         for i in range(0, len(cand_cuts)):
-            if cand_cuts[i]["size"] + size <= k and cand_cuts[i]["score"] > 0:
+            if cand_cuts[i]["size"] + size <= k and cand_cuts[i]["energy"] > 0:
                 if (best_cut is None or
-                        cand_cuts[i]["score"] > best_cut["score"]):
+                        cand_cuts[i]["energy"] > best_cut["energy"]):
                     best_cut = cand_cuts[i]
                     b = i
         if best_cut is None:
