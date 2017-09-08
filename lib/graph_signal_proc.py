@@ -461,7 +461,7 @@ def ratio_cut_hierarchy(G):
 
 def compute_coefficients(tree, F):
     """
-        Computes tree coefficients for Gavish's transform.
+        Compute tree coefficients for Gavish's transform.
         Input:
             * tree: tree
             * F: graph signal
@@ -469,24 +469,24 @@ def compute_coefficients(tree, F):
             * None
     """
     if tree.data is None:
-        avg = 0
+        tot = 0
         count = 0
-        for i in range(len(tree.children)):
-            compute_coefficients(tree.children[i], F)
-            avg = avg + tree.children[i].avg * tree.children[i].count
-            count = count + tree.children[i].count
+        for i, child in enumerate(tree.children):
+            compute_coefficients(child, F)
+            tot += child.avg * child.count
+            count += child.count
 
             if i > 0:
-                tree.diffs.append(2 * tree.children[i].count *
-                                  (tree.children[i].avg - float(avg) / count))
-        tree.avg = float(avg) / tree.count
+                tree.diffs.append(2 * child.count *
+                                  (child.avg - float(tot) / count))
+        tree.avg = float(tot) / tree.count
     else:
         tree.avg = F[tree.data]
 
 
 def reconstruct_values(tree, F):
     """
-            Reconstructs values for Gavish's transform based on a tree.
+            Reconstruct values for Gavish's transform based on a tree.
             Input:
                     * tree: tree
                     * F: graph signal
@@ -494,18 +494,18 @@ def reconstruct_values(tree, F):
                     * None
     """
     if tree.data is None:
-        avg = tree.avg * tree.count
+        tot = tree.avg * tree.count
         count = tree.count
         for i in reversed(range(len(tree.children))):
             if i == 0:
-                tree.children[i].avg = avg / tree.children[i].count
+                tree.children[i].avg = tot / tree.children[i].count
                 reconstruct_values(tree.children[i], F)
             else:
-                tree.children[i].avg = float(avg) / count + 0.5 * \
+                tree.children[i].avg = float(tot) / count + 0.5 * \
                     float(tree.diffs[i - 1]) / tree.children[i].count
                 reconstruct_values(tree.children[i], F)
                 count = count - tree.children[i].count
-                avg = avg - tree.children[i].avg * tree.children[i].count
+                tot = tot - tree.children[i].avg * tree.children[i].count
 
     else:
         F[tree.data] = tree.avg
@@ -513,7 +513,8 @@ def reconstruct_values(tree, F):
 
 def clear_tree(tree):
     """
-        Clears tree info.
+        Clear tree info.
+        tree.count is kept
         Input:
             * tree
         Output:
@@ -529,22 +530,20 @@ def clear_tree(tree):
 
 def get_coefficients(tree, wtr):
     """
-        Recovers wavelet coefficients from the wavelet tree.
+        Recover wavelet coefficients from the wavelet tree.
         Input:
             * tree
-            * wtr: wavelet coefficients
+            * wtr: list of wavelet coefficients
         Output:
             * None
     """
     Q = deque()
-    scales = []
     wtr.append(tree.count * tree.avg)
 
     Q.append(tree)
 
     while len(Q) > 0:
         node = Q.popleft()
-        scales.append(node.scale)
 
         for j in range(len(node.diffs)):
             wtr.append(node.diffs[j])
@@ -558,7 +557,7 @@ def set_coefficients(tree, wtr):
         Sets wavelet tree coefficients.
         Input:
             * tree
-            * wtr: wavelet coefficients
+            * wtr: list of wavelet coefficients
     """
     Q = deque()
     tree.avg = float(wtr[0]) / tree.count
@@ -570,7 +569,7 @@ def set_coefficients(tree, wtr):
 
         for j in range(len(node.children) - 1):
             node.diffs.append(wtr[p])
-            p = p + 1
+            p += 1
 
         for i in range(len(node.children)):
             Q.append(node.children[i])
