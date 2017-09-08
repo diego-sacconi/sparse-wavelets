@@ -1,7 +1,5 @@
 import networkx as nx
 import numpy as np
-import pandas as pd
-import statsmodels.api as sm
 
 
 def read_graph(input_graph_name, input_data_name):
@@ -95,48 +93,3 @@ def read_values(input_data_name, G):
     F = F - np.mean(F)
 
     return F
-
-
-def read_dyn_graph(path, num_snapshots, G):
-    """
-        Reads a dynamic graph.
-        Input:
-            * path: Path containing a files for each graph snapshot
-                (e.g. folder/traffic_, for files folder/traffic_0.data ...
-                folder/traffic_100.data)
-            * num_snapshots: number of snapshots
-            * G: networkx graph
-        Output:
-            * FT: array #snapshots x #vertices
-
-    """
-    FT = []
-    for t in range(num_snapshots):
-        in_file = path + "_" + str(t) + ".data"
-        F = read_values(in_file, G)
-        FT.append(F)
-
-    return np.array(FT)
-
-
-def clean_traffic_data(FT):
-    start_time = datetime.strptime("1/04/11 00:00", "%d/%m/%y %H:%M")
-    c_FT = []
-    for i in range(FT.shape[1]):
-        # removing daily seasonality
-        data = pd.DataFrame(FT[:, i], pd.DatetimeIndex(
-            start='1/04/11 00:00', periods=len(FT[:, i]), freq='5min'))
-        data.interpolate(inplace=True)
-
-        res = sm.tsa.seasonal_decompose(data.values, freq=288)
-        F = FT[:, i] - res.seasonal
-
-        # removing weekly seasonality
-        data = pd.DataFrame(F, pd.DatetimeIndex(
-            start='1/04/11 00:00', periods=len(FT[:, i]), freq='5min'))
-        res = sm.tsa.seasonal_decompose(data.values, freq=288 * 7)
-        F = F - res.seasonal
-
-        c_FT.append(F)
-
-    return np.array(c_FT).transpose()
