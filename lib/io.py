@@ -1,13 +1,25 @@
+"""
+This module read graph's info from files with the following format:
+
+input_graph_name has info about edges.
+Row format: "vertex_A, vertex_B[, edge_weight]"
+
+input_data_name has info about the graph signal.
+Row format : "vertex_id, vertex_value"
+"""
+
 import networkx as nx
 import numpy as np
 
 
 def read_graph(input_graph_name, input_data_name):
     """
-        Reads graph from file.
+        Read graph from file.
         Input:
-            * input_graph_name: csv edge list
-            * input_data_name: csv node-value pairs
+            * input_graph_name has info about edges.
+                Row format: "vertex_A, vertex_B[, edge_weight]"
+            * input_data_name has info about the graph signal.
+                Row format : "vertex_id, vertex_value"
         Output:
             * networkx graph
     """
@@ -35,7 +47,8 @@ def read_graph(input_graph_name, input_data_name):
         vec = line.rsplit(',')
         v1 = vec[0]
         v2 = vec[1]
-
+        # Note that the edge weight is always set to 1
+        # even when provided available in input_graph_name
         if v1 in values and v2 in values:
             G.add_edge(v1, v2, weight=1.)
 
@@ -44,29 +57,30 @@ def read_graph(input_graph_name, input_data_name):
 
     G = Gcc[0]
 
-    values_in_graph = {}
+    graph_signal = {}
 
-    # Setting values as node attributes
+    # Setting the graph_signal as node attribute
     for v in values.keys():
         if v in G:
-            values_in_graph[v] = values[v]
+            graph_signal[v] = values[v]
 
     input_graph.close()
-    nx.set_node_attributes(G, "value", values_in_graph)
+    nx.set_node_attributes(G, "value", graph_signal)
 
     return G
 
 
 def read_values(input_data_name, G):
     """
-        Reads node values.
+        Read the graph signal from file
         Input:
-            * input_data_name: csv node-value pairs
+            * input_data_name has info about the graph signal.
+                Row format : "vertex_id, vertex_value"
             * G: networkx graph
         Output:
             * F: normalized node values array, ordered by G.nodes()
     """
-    D = {}
+    graph_signal = {}
     input_data = open(input_data_name, 'r')
 
     # Reading file
@@ -76,14 +90,14 @@ def read_values(input_data_name, G):
 
         vertex = vec[0]
         value = float(vec[1])
-        D[vertex] = value
+        graph_signal[vertex] = value
 
     input_data.close()
 
     F = []
     for v in G.nodes():
-        if v in D:
-            F.append(float(D[v]))
+        if v in graph_signal:
+            F.append(float(graph_signal[v]))
         else:
             F.append(0.)
 
