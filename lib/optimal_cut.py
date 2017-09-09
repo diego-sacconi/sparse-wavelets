@@ -73,8 +73,8 @@ def fast_cac(G, F, ind):
         Output:
             * CAC: matrix product
     """
-    signal = np.array([F[ind[v]] for v in G.nodes()])
-    return np.outer(signal, signal)
+    sorted_F = np.array([F[ind[v]] for v in G.nodes()])
+    return -2 * math.pow(len(sorted_F), 2) * np.outer(sorted_F, sorted_F)
 
 
 def power_method(mat, start, maxit):
