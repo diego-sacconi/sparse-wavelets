@@ -2,7 +2,9 @@
 
 Implementation of graph wavelets via sparse cuts with some baselines, datasets and evaluation.
 
-Evaluation is performed using python notebooks.
+Evaluation is performed using IPython Notebook.
+
+After code review some results may differ from those presented in the paper.
 
 Scalability and approximation experiments:
 -----------------------
