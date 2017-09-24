@@ -372,7 +372,7 @@ def compression_experiment(G, F, algs, comp_ratios, num):
     >>> F = io.read_values(data.small_traffic["path"] + "traffic.data", G)
     >>> algs = [static.OptWavelets(n=5, method='lobpcg'),\
     ... static.OptWavelets(method='tracemin_lu'), static.Fourier(),\
-    ... static.GRCWavelets(method='tracemin_lu')]
+    ... static.GRCWavelets(method='tracemin_lu'), static.HWavelets()]
     >>> comp_ratios = [0.1, 0.2]
     >>> res_smt, time_smt = \
     ...     compression_experiment(G, np.array(F), algs,
@@ -385,11 +385,8 @@ def compression_experiment(G, F, algs, comp_ratios, num):
     [ 0.15091373  0.05312383]
     >>> print(res_smt['GWT'])
     [ 0.1988195   0.10399963]
-
-    #>> print(res_smt['FT'])
-    #[ 0.17681431  0.1036391 ]
-    #>> print(res_smt['GWT'])
-    #[ 0.20987113  0.13070782]
+    >>> print(res_smt['HWT'])
+    [ 0.27003969  0.23748869]
     """
     results = {}
     times = {}

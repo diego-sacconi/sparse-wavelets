@@ -63,7 +63,7 @@ def sweep_opt(x, F, G, k, ind):
         if i <= best_cand:
             vec[sorted_x[i]] = -1.
 
-    return vec, best_energy, best_cut_size, best_energy
+    return vec, best_energy, best_cut_size
 
 
 def fast_cac(G, F, ind):
@@ -126,7 +126,7 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     x = np.asarray(np.dot(eigvecs[:, 0], isqrtCL))[0, :]
 
     res = {}
-    res["x"], res["energy"], res["size"], res["score"] = sweep_opt(x, F, G, k, ind)
+    res["x"], res["energy"], res["size"] = sweep_opt(x, F, G, k, ind)
 
     return res
 
@@ -285,7 +285,7 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
     eigvec = power_method(-M, start, 10)
     x = chebyshev_approx_1d(n, beta, eigvec, L)
     res = {}
-    res["x"], res["energy"], res["size"], res["score"] = sweep_opt(x, F, G, k, ind)
+    res["x"], res["energy"], res["size"] = sweep_opt(x, F, G, k, ind)
 
     return res
 
