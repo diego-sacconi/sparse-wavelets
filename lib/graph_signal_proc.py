@@ -239,12 +239,18 @@ class Node(object):
         self.diffs = []
         # Level on the tree. The root has scale = 0
         self.scale = 0
-        self.cut = 0
         # count: number of leaves (data != None) of its subtree
         if data is None:
             self.count = 0
         else:
             self.count = 1
+
+    def __str__(self):
+        descr = "Node id: {}, data: {}, scale: {}, count: {}"
+        return descr.format(id(self), self.data, self.scale, self.count)
+
+    def __repr__(self):
+        return self.__str__()
 
     def add_child(self, obj):
         """
@@ -292,6 +298,11 @@ def sqrtmi(mat):
     return dot(eigvecs, dot(diag(1. / sqrt(eigvals)), eigvecs.T))
 
 
+def set_fiedler_method(method):
+    global _method
+    _method = method
+
+
 def sweep(x, G):
     """
         Sweep algorithm for ratio-cut (2nd eigenvector of the Laplacian).
@@ -302,7 +313,6 @@ def sweep(x, G):
         Output:
             * vec: indicator vector
     """
-
     sorted_x = np.argsort(x)
     part_one = set()
     N = nx.number_of_nodes(G)
@@ -326,7 +336,13 @@ def sweep(x, G):
                 best_cand = i
                 best_val = val
 
-    return np.array([-1. if i <= best_cand else 1. for i in sorted_x])
+    vec = np.ones(nx.number_of_nodes(G))
+
+    for i in range(x.shape[0]):
+        if i <= best_cand:
+            vec[sorted_x[i]] = -1.
+
+    return vec
 
 
 def separate_lcc(G, G0):
@@ -356,12 +372,12 @@ def ratio_cut(G):
     G0 = Gcc[0]
 
     if nx.number_of_nodes(G) == nx.number_of_nodes(G0):
-        x = nx.fiedler_vector(G, method='lobpcg', tol=1e-5)
+        scipy.random.seed(1)
+        x = nx.fiedler_vector(G, method=_method, tol=1e-5)
         x = sweep(x, G)
     else:
         # In case G is not connected
         x = separate_lcc(G, G0)
-
     return np.array(x)
 
 
@@ -377,7 +393,6 @@ def get_subgraphs(G, cut):
     """
     G1 = nx.Graph()
     G2 = nx.Graph()
-
     i = 0
     P1 = []
     P2 = []
@@ -434,7 +449,7 @@ def rc_recursive(node, G, ind):
             node.add_child(r)
 
 
-def ratio_cut_hierarchy(G):
+def ratio_cut_hierarchy(G, method='lobpcg'):
     """
         Computes ratio-cut hierarchy for a graph.
         The leaves store, as data, the integer returned by ind for the
@@ -446,11 +461,10 @@ def ratio_cut_hierarchy(G):
             * ind: index with unique integers as values
 
     """
-    i = 0
-    ind = {}
-    for v in G.nodes():
-        ind[v] = i
-        i = i + 1
+    global _method
+    _method = method
+
+    ind = {v: i for i, v in enumerate(G.nodes())}
 
     root = Node(None)
 
@@ -575,7 +589,7 @@ def set_coefficients(tree, wtr):
             Q.append(node.children[i])
 
 
-def gavish_wavelet_transform(tree, ind, G, F):
+def gavish_wavelet_transform(tree, G, F):
     """
         Gavish's wavelet transform.
         Input:
@@ -590,7 +604,6 @@ def gavish_wavelet_transform(tree, ind, G, F):
     clear_tree(tree)
     compute_coefficients(tree, F)
     get_coefficients(tree, wtr)
-
     return np.array(wtr)
 
 

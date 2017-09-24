@@ -1,6 +1,6 @@
 import time
 
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 
 import lib.optimal_cut as oc
@@ -11,11 +11,7 @@ def L2(F, F_approx):
     """
         Sum of squared errors
     """
-    e = 0
-    for i in range(F.shape[0]):
-        e = e + ((F[i] - F_approx[i])**2).sum()
-
-    return float(e)
+    return sum([(F[i] - F_approx[i])**2 for i in range(F.shape[0])])
 
 
 def size_time_experiment(sizes, balance, sparsity, energy, noise, num):
@@ -35,21 +31,13 @@ def size_time_experiment(sizes, balance, sparsity, energy, noise, num):
 
     for s in range(len(sizes)):
         res_t = []
-        num_edges = 3 * sizes[s]
         for i in range(num):
             # synthetic_graph(size, num_edges, sparsity, energy, balance,
             # noise, seed=None)
-            (G, F, cut) = syn.synthetic_graph(sizes[s], num_edges, sparsity,
-                                              energy, balance, noise)
+            (G, F, k) = syn.synthetic_graph(sizes[s], 3 * sizes[s], sparsity,
+                                            energy, balance, noise)
 
-            j = 0
-            ind = {}
-            for v in G.nodes():
-                ind[v] = j
-                j = j + 1
-
-            # k = max number of edges to be cut
-            k = int(len(G.edges()) * sparsity)
+            ind = {v: i for i, v in enumerate(G.nodes())}
 
             start_time = time.time()
             oc.one_d_search(G, F, k, ind)
@@ -69,10 +57,10 @@ def size_time_experiment(sizes, balance, sparsity, energy, noise, num):
 
             res_t.append([time_slow, time_5, time_20, time_50])
 
-        r = numpy.mean(numpy.array(res_t), axis=0)
+        r = np.mean(np.array(res_t), axis=0)
         res_time.append(r)
 
-    return numpy.array(res_time)
+    return np.array(res_time)
 
 
 def sparsity_acc_experiment(sparsity, size, balance, energy, noise, num):
@@ -96,11 +84,7 @@ def sparsity_acc_experiment(sparsity, size, balance, energy, noise, num):
             (G, F, k) = syn.synthetic_graph(size, 3 * size, sparsity[s],
                                             energy, balance, noise)
 
-            j = 0
-            ind = {}
-            for v in G.nodes():
-                ind[v] = j
-                j = j + 1
+            ind = {v: i for i, v in enumerate(G.nodes())}
 
             c = oc.one_d_search(G, F, k, ind)
             acc_slow = c["energy"]
@@ -116,17 +100,17 @@ def sparsity_acc_experiment(sparsity, size, balance, energy, noise, num):
 
             res_a.append([acc_slow, acc_5, acc_20, acc_50])
 
-        r = numpy.mean(numpy.array(res_a), axis=0)
+        r = np.mean(np.array(res_a), axis=0)
         res.append(r)
 
-    return numpy.array(res)
+    return np.array(res)
 
 
 def noise_acc_experiment(noise, size, sparsity, energy, balance, num):
     """
         Noise x accuracy experiments using synthetic data.
         Input:
-            * noise: many
+            * noise: list of noises
             * size
             * sparsity
             * energy
@@ -143,11 +127,7 @@ def noise_acc_experiment(noise, size, sparsity, energy, balance, num):
             (G, F, k) = syn.synthetic_graph(size, 3 * size, sparsity,
                                             energy, balance, noise[s])
 
-            j = 0
-            ind = {}
-            for v in G.nodes():
-                ind[v] = j
-                j = j + 1
+            ind = {v: i for i, v in enumerate(G.nodes())}
 
             c = oc.one_d_search(G, F, k, ind)
             acc_slow = c["energy"]
@@ -163,17 +143,17 @@ def noise_acc_experiment(noise, size, sparsity, energy, balance, num):
 
             res_a.append([acc_slow, acc_5, acc_20, acc_50])
 
-        r = numpy.mean(numpy.array(res_a), axis=0)
+        r = np.mean(np.array(res_a), axis=0)
         res.append(r)
 
-    return numpy.array(res)
+    return np.array(res)
 
 
 def energy_acc_experiment(energy, size, sparsity, noise, balance, num):
     """
         Energy x accuracy experiments using synthetic data.
         Input:
-            * energy: many
+            * energy: list of energies
             * size
             * sparsity
             * noise
@@ -190,11 +170,7 @@ def energy_acc_experiment(energy, size, sparsity, noise, balance, num):
             (G, F, k) = syn.synthetic_graph(size, 3 * size, sparsity,
                                             energy[s], balance, noise)
 
-            j = 0
-            ind = {}
-            for v in G.nodes():
-                ind[v] = j
-                j = j + 1
+            ind = {v: i for i, v in enumerate(G.nodes())}
 
             c = oc.one_d_search(G, F, k, ind)
             acc_slow = c["energy"]
@@ -210,10 +186,10 @@ def energy_acc_experiment(energy, size, sparsity, noise, balance, num):
 
             res_a.append([acc_slow, acc_5, acc_20, acc_50])
 
-        r = numpy.mean(numpy.array(res_a), axis=0)
+        r = np.mean(np.array(res_a), axis=0)
         res.append(r)
 
-    return numpy.array(res)
+    return np.array(res)
 
 
 def plot_size_time_experiment(results, sizes, output_file_name):
@@ -230,7 +206,6 @@ def plot_size_time_experiment(results, sizes, output_file_name):
 
     ax = plt.subplot(111)
 
-    ncol = 2
     ax.plot(sizes, results[:, 0], marker="x", color="cyan",
             label="SWT", markersize=15)
     ax.plot(sizes, results[:, 1], marker="o", color="orangered",
@@ -240,7 +215,7 @@ def plot_size_time_experiment(results, sizes, output_file_name):
     ax.plot(sizes, results[:, 3], marker="o", color="k",
             label="FSWT-50", markersize=15)
     plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper center', prop={'size': 20}, ncol=ncol)
+    ax.legend(loc='upper center', prop={'size': 20}, ncol=2)
     ax.set_ylabel('time (sec.)', fontsize=30)
     ax.set_xlabel('#vertices', fontsize=30)
     ax.tick_params(labelsize=23)
@@ -265,19 +240,18 @@ def plot_sparsity_acc_experiment(results, sparsity, output_file_name):
     """
     plt.clf()
 
-    ncol = 2
     ax = plt.subplot(111)
     width = 0.04       # the width of the bars)
-    ax.bar(numpy.array(sparsity) - 2 * width,
+    ax.bar(np.array(sparsity) - 2 * width,
            results[:, 0], width, color='cyan', label="SWT", hatch="/")
-    ax.bar(numpy.array(sparsity) - width, results[:, 1],
+    ax.bar(np.array(sparsity) - width, results[:, 1],
            width, color='orangered', label="FSWT-5", hatch="\\")
-    ax.bar(numpy.array(sparsity), results[:, 2], width,
+    ax.bar(np.array(sparsity), results[:, 2], width,
            color='darkgreen', label="FSWT-20", hatch="-")
-    ax.bar(numpy.array(sparsity) + width, results[:, 3],
+    ax.bar(np.array(sparsity) + width, results[:, 3],
            width, color='k', label="FSWT-50", hatch="*")
     plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper center', prop={'size': 20}, ncol=ncol)
+    ax.legend(loc='upper center', prop={'size': 20}, ncol=2)
     ax.set_ylabel(r'L$_2$ energy', fontsize=30)
     ax.set_xlabel('sparsity', fontsize=30)
     plt.rcParams['xtick.labelsize'] = 20
@@ -301,19 +275,19 @@ def plot_noise_acc_experiment(results, noise, output_file_name):
     plt.clf()
 
     ax = plt.subplot(111)
-    ncol = 2
+
     width = 0.04       # the width of the bars)
-    ax.bar(numpy.array(noise) - 2 * width, results[:, 0],
+    ax.bar(np.array(noise) - 2 * width, results[:, 0],
            width, color='cyan', label="SWT")
-    ax.bar(numpy.array(noise) - width,
+    ax.bar(np.array(noise) - width,
            results[:, 1], width, color='orangered', label="FSWT-5")
-    ax.bar(numpy.array(noise), results[:, 2],
+    ax.bar(np.array(noise), results[:, 2],
            width, color='darkgreen', label="FSWT-20")
-    ax.bar(numpy.array(noise) + width, results[:, 3],
+    ax.bar(np.array(noise) + width, results[:, 3],
            width, color='k', label="FSWT-50")
 
     plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper center', prop={'size': 20}, ncol=ncol)
+    ax.legend(loc='upper center', prop={'size': 20}, ncol=2)
     ax.set_ylabel(r'L$_2$ energy', fontsize=30)
     ax.set_xlabel('noise', fontsize=30)
     plt.rcParams['xtick.labelsize'] = 20
@@ -335,8 +309,8 @@ def plot_energy_acc_experiment(results, energy, output_file_name):
             * None
     """
     plt.clf()
-    ncol = 2
-    ind = numpy.array(list(range(4)))
+
+    ind = np.array(list(range(4)))
     ax = plt.subplot(111)
     width = 0.2      # the width of the bars)
     ax.bar(ind - width, results[:, 0],
@@ -349,7 +323,7 @@ def plot_energy_acc_experiment(results, energy, output_file_name):
            width, color='k', label="FSWT-50", log=True)
 
     plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper left', prop={'size': 20}, ncol=ncol)
+    ax.legend(loc='upper left', prop={'size': 20}, ncol=2)
     ax.set_ylabel(r'L$_2$ energy', fontsize=30)
     ax.set_xlabel(r'L$_2$ energy (data)', fontsize=30)
     plt.rcParams['xtick.labelsize'] = 20
@@ -362,6 +336,87 @@ def plot_energy_acc_experiment(results, energy, output_file_name):
     ax.set_xlim(-0.3, 3.7)
 
     plt.savefig(output_file_name, dpi=300, bbox_inches='tight')
+
+
+def get_children(tree, chil_list):
+    c = tree.children
+    if c != []:
+        chil_list.append(c[0])
+        if len(c) == 2:
+            chil_list.append(c[1])
+        get_children(c[0], chil_list)
+        if len(c) == 2:
+            get_children(c[1], chil_list)
+
+
+def compression_experiment(G, F, algs, comp_ratios, num):
+    r"""
+    Runs compression experiment static.
+        Input:
+            * G: graph
+            * F: graph signal
+            * algs: compression algorithms/transforms
+            * comp_ratios: compression ratios
+            * num: number of repetitions
+        Output:
+            * results: compression results
+            * times: compression times
+
+    To run the following DOCTEST set PYTHONHASHSEED=0
+
+    >>> from lib import io, static
+    >>> import lib.datasets as data
+    >>>
+    >>> G = io.read_graph(data.small_traffic["path"] + "traffic.graph",
+    ...                   data.small_traffic["path"] + "traffic.data")
+    >>> F = io.read_values(data.small_traffic["path"] + "traffic.data", G)
+    >>> algs = [static.OptWavelets(n=5, method='lobpcg'),\
+    ... static.OptWavelets(method='tracemin_lu'), static.Fourier(),\
+    ... static.GRCWavelets(method='tracemin_lu')]
+    >>> comp_ratios = [0.1, 0.2]
+    >>> res_smt, time_smt = \
+    ...     compression_experiment(G, np.array(F), algs,
+    ...                            comp_ratios, 1)
+    >>> print(res_smt['FT'])
+    [ 0.17681431  0.1036391 ]
+    >>> print(res_smt['FSWT'])
+    [ 0.16306688  0.03567735]
+    >>> print(res_smt['SWT'])
+    [ 0.15091373  0.05312383]
+    >>> print(res_smt['GWT'])
+    [ 0.1988195   0.10399963]
+
+    #>> print(res_smt['FT'])
+    #[ 0.17681431  0.1036391 ]
+    #>> print(res_smt['GWT'])
+    #[ 0.20987113  0.13070782]
+    """
+    results = {}
+    times = {}
+
+    for alg in algs:
+        results[alg.name()] = []
+        times[alg.name()] = []
+        for r in range(len(comp_ratios)):
+            T = []
+            R = []
+            for i in range(num):
+                start_time = time.time()
+                alg.set_graph(G)
+                tr = alg.transform(F)
+                size = int(F.size * comp_ratios[r])
+                appx_tr = alg.drop_frequency(tr, size)
+                appx_F = alg.inverse(appx_tr)
+                t = time.time() - start_time
+                T.append(t)
+                R.append(L2(F, appx_F))
+            T = np.array(T)
+            R = np.array(R)
+            times[alg.name()].append(np.mean(T))
+            results[alg.name()].append(np.mean(R))
+        results[alg.name()] = np.array(results[alg.name()])
+        times[alg.name()] = np.array(times[alg.name()])
+    return results, times
 
 
 def plot_compression_experiments(results, comp_ratios, output_file_name,
@@ -384,7 +439,6 @@ def plot_compression_experiments(results, comp_ratios, output_file_name,
                 results[alg][i] = results[alg][i - 1]
 
     ax = plt.subplot(111)
-    ncol = 3
 
     ax.semilogy(comp_ratios, results["FSWT"], marker="o", color="r",
                 label="FSWT", markersize=15)
@@ -403,7 +457,7 @@ def plot_compression_experiments(results, comp_ratios, output_file_name,
                     label="HWT", markersize=15)
 
     plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper center', prop={'size': 20}, ncol=ncol)
+    ax.legend(loc='upper center', prop={'size': 20}, ncol=3)
     ax.set_ylabel(r'L$_2$ error', fontsize=30)
     ax.set_xlabel('size', fontsize=30)
     plt.rcParams['xtick.labelsize'] = 20
@@ -412,48 +466,3 @@ def plot_compression_experiments(results, comp_ratios, output_file_name,
     ax.set_ylim(0., max_y)
 
     plt.savefig(output_file_name, dpi=300, bbox_inches='tight')
-
-
-def compression_experiment_static(G, F, algs, comp_ratios, num):
-    """
-        Runs compression experiment static.
-        Input:
-            * G: graph
-            * F: graph signal
-            * algs: compression algorithms/transforms
-            * comp_ratios: compression ratios
-            * num: number of repetitions
-        Output:
-            * results: compression results
-            * times: compression times
-    """
-    results = {}
-    times = {}
-
-    for alg in algs:
-        results[alg.name()] = []
-        times[alg.name()] = []
-
-        for r in range(len(comp_ratios)):
-            T = []
-            R = []
-            for i in range(num):
-                start_time = time.time()
-                alg.set_graph(G)
-                tr = alg.transform(F)
-                size = int(F.size * comp_ratios[r])
-                appx_tr = alg.drop_frequency(tr, size)
-                appx_F = alg.inverse(appx_tr)
-                t = time.time() - start_time
-                T.append(t)
-                R.append(L2(F, appx_F))
-            T = numpy.array(T)
-            R = numpy.array(R)
-            times[alg.name()].append(numpy.mean(T))
-            results[alg.name()].append(numpy.mean(R))
-
-        results[alg.name()] = numpy.array(results[alg.name()])
-
-        times[alg.name()] = numpy.array(times[alg.name()])
-
-    return results, times

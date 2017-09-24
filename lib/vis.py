@@ -203,3 +203,36 @@ def draw_time_graph_eig(G, eig, fig_output_file_name):
 
     for i in range(G.num_snaps()):
         os.system("rm graph-" + str(i) + ".svg")
+
+
+def eig_vis_opt(G, F, beta):
+    """
+            Computes first and second eigenvector of sqrt(C+beta*L)^T CAC sqrt(C+beta*L) matrix for visualization.
+            Input:
+                    * G: graph
+                    * F: graph signal
+                    * beta: regularization parameter
+            Output:
+                    * v1: first eigenvector
+                    * v2: second eigenvector
+    """
+    ind = {}
+    i = 0
+
+    for v in G.nodes():
+        ind[v] = i
+        i = i + 1
+
+    C = laplacian_complete(nx.number_of_nodes(G))
+    A = weighted_adjacency_complete(G, F, ind)
+    CAC = np.dot(np.dot(C, A), C)
+    L = nx.laplacian_matrix(G).todense()
+
+    isqrtCL = sqrtmi(C + beta * L)
+    M = np.dot(np.dot(isqrtCL, CAC), isqrtCL)
+
+    (eigvals, eigvecs) = scipy.linalg.eigh(M, eigvals=(0, 1))
+    x1 = np.asarray(np.dot(eigvecs[:, 0], isqrtCL))[0, :]
+    x2 = np.asarray(np.dot(eigvecs[:, 1], isqrtCL))[0, :]
+
+    return x1, x2

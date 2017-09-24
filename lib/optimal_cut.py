@@ -1,7 +1,7 @@
 import math
 
-import numpy as np
 import networkx as nx
+import numpy as np
 import scipy
 
 from lib.graph_signal_proc import Node
@@ -20,14 +20,14 @@ def sweep_opt(x, F, G, k, ind):
         Output:
             * vec: indicator vector
             * best_energy: max energy value
-            * best_edges_cut: number of edges cut
+            * best_cut_size: number of edges in the returned cut
     """
     sorted_x = np.argsort(x)
     part_one = set()
     N = nx.number_of_nodes(G)
     best_energy = 0.
-    edges_cut = 0
-    best_edges_cut = 0
+    cut_size = 0
+    best_cut_size = 0
     sum_one = 0     # sum of the graph signal values for the nodes in part_one
     sum_two = 0     # sum of the graph signal values for the nodes in part_two
 
@@ -41,9 +41,9 @@ def sweep_opt(x, F, G, k, ind):
 
         for v in G.neighbors(G.nodes()[sorted_x[i]]):
             if v not in part_one:
-                edges_cut = edges_cut + 1
+                cut_size += 1
             else:
-                edges_cut = edges_cut - 1
+                cut_size -= 1
 
         den = N * len(part_one) * (N - len(part_one))
         if den > 0:
@@ -52,14 +52,18 @@ def sweep_opt(x, F, G, k, ind):
         else:
             energy = 0
 
-        if energy >= best_energy and edges_cut <= k:
+        if energy >= best_energy and cut_size <= k:
             best_cand = i
             best_energy = energy
-            best_edges_cut = edges_cut
+            best_cut_size = cut_size
 
-    vec = np.array([-1. if i <= best_cand else 1. for i in sorted_x])
+    vec = np.ones(nx.number_of_nodes(G))
 
-    return vec, best_energy, best_edges_cut
+    for i in range(x.shape[0]):
+        if i <= best_cand:
+            vec[sorted_x[i]] = -1.
+
+    return vec, best_energy, best_cut_size, best_energy
 
 
 def fast_cac(G, F, ind):
@@ -121,12 +125,8 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     (eigvals, eigvecs) = scipy.linalg.eigh(M, eigvals=(0, 0))
     x = np.asarray(np.dot(eigvecs[:, 0], isqrtCL))[0, :]
 
-    (x, energy, size) = sweep_opt(x, F, G, k, ind)
-
     res = {}
-    res["x"] = np.array(x)
-    res["size"] = size
-    res["energy"] = energy
+    res["x"], res["energy"], res["size"], res["score"] = sweep_opt(x, F, G, k, ind)
 
     return res
 
@@ -139,46 +139,48 @@ def trans(L, min_v, max_v):
             * min_v: lower bound
             * max_v: upper bound
         Output:
-            * translation
+            * translation as tuple of a sparse matrix and a scalar
     """
-    return (float(2.) / (max_v - min_v)) * L, -(float(max_v + min_v) /
-                                                (max_v - min_v))
+    return (2. / (max_v - min_v)) * L, -(float(max_v + min_v) /
+                                         (max_v - min_v))
 
 
-def fun(k, n, beta, min_v, max_v, x):
+def isqrt(k, beta, min_v, max_v, x):
     """
-        Function to be integrated in Chebyshev polynomial computation.
+        Inverse square root function to be integrated in
+        Chebyshev polynomial computation.
         Input:
             * k: coefficient number
-            * n: number of polynomials
+            * beta: regularization parameter
             * min_v: lower bound
             * max_v: upper bound
+            * x: function variable
         Output:
             * function value
     """
-    y = 0.5 * math.cos(x) * float(max_v - min_v) + (0.5 * (max_v + min_v))
+    y = 0.5 * (math.cos(x) * float(max_v - min_v) + (max_v + min_v))
 
-    return math.cos(k * x) * (float(1.) / math.sqrt(beta * y))
+    return math.cos(k * x) * (1. / math.sqrt(beta * y))
 
 
-def coef(k, n, beta, min_v, max_v):
+def coef(k, beta, min_v, max_v):
     """
-        Chebyshev polynomial coefficients.
+        Get the k-th Chebyshev polynomial coefficient for the inverse
+        square root
         Input:
             * k: coefficient number
-            * n: number of polynomials
             * min_v: lower bound
             * max_v: upper bound
         Output:
             * coefficient
     """
-    return float(2. * scipy.integrate.quad(
-        lambda x: fun(k, n, beta, min_v, max_v, x), 0., math.pi)[0]) / math.pi
+    return (2. / math.pi) * (scipy.integrate.quad(
+        lambda x: isqrt(k, beta, min_v, max_v, x), 0., math.pi)[0])
 
 
 def chebyshev_approx_2d(n, beta, X, L):
     """
-        Approximates sqrt((L)^+)^T * X * sqrt((L)^+)^T using
+        Approximates sqrt((beta * L)^+) * X * sqrt((beta * L)^+) using
         Chebyshev polynomials (twice)
         Input:
             * n: number of polynomials
@@ -188,31 +190,35 @@ def chebyshev_approx_2d(n, beta, X, L):
         Output:
             * P2: approximation
     """
-    max_v = beta * L.shape[0]
+    N = L.shape[0]
+    max_v = beta * N
     min_v = 1
-
+    # ts1 is a sparse matrix, ts2 is a scalar
     ts1, ts2 = trans(L, min_v, max_v)
-    P1 = 0.5 * coef(0, L.shape[0], beta, min_v, max_v) * X
+    # Recurrence relation for Chebyshev polynomials
+    # Tk = 2 * y * Tk_1 - Tk_2
+    # 0,5 * c_n0 * x + sum_{k=1}^{inf} (c_nk * Tk) * x
+    P1 = 0.5 * coef(0, beta, min_v, max_v) * X
     tkm2 = X
     tkm1 = scipy.sparse.csr_matrix.dot(ts1, X) + ts2 * X
-    P1 = P1 + coef(1, L.shape[0], beta, min_v, max_v) * tkm1
+    P1 = P1 + coef(1, beta, min_v, max_v) * tkm1
 
     for i in range(2, n):
         Tk = 2. * (scipy.sparse.csr_matrix.dot(ts1, tkm1) + ts2 * tkm1) - tkm2
-        P1 = P1 + coef(i, L.shape[0], beta, min_v, max_v) * Tk
+        P1 = P1 + coef(i, beta, min_v, max_v) * Tk
         tkm2 = tkm1
         tkm1 = Tk
 
     P1 = P1.transpose()
-    P2 = 0.5 * coef(0, L.shape[0], beta, min_v, max_v) * P1
+    P2 = 0.5 * coef(0, beta, min_v, max_v) * P1
     tkm2 = P1
     tkm1 = scipy.sparse.csr_matrix.dot(ts1, P1) + ts2 * P1
 
-    P2 = P2 + coef(1, L.shape[0], beta, min_v, max_v) * tkm1
+    P2 = P2 + coef(1, beta, min_v, max_v) * tkm1
 
     for i in range(2, n):
         Tk = 2. * (scipy.sparse.csr_matrix.dot(ts1, tkm1) + ts2 * tkm1) - tkm2
-        P2 = P2 + coef(i, L.shape[0], beta, min_v, max_v) * Tk
+        P2 = P2 + coef(i, beta, min_v, max_v) * Tk
         tkm2 = tkm1
         tkm1 = Tk
 
@@ -221,7 +227,7 @@ def chebyshev_approx_2d(n, beta, X, L):
 
 def chebyshev_approx_1d(n, beta, x, L):
     """
-        Approximates x*sqrt(L^+) using Chebyshev polynomials.
+        Approximates x*sqrt((beta * L)^+) using Chebyshev polynomials.
         Input:
             * n: number of polynomials
             * beta: regularization parameter
@@ -231,20 +237,25 @@ def chebyshev_approx_1d(n, beta, x, L):
             * P: approximation
 
     """
-    max_v = beta * L.shape[0]
+    N = L.shape[0]
+    max_v = beta * N
     min_v = 1
-
+    # ts1 is a sparse matrix, ts2 is a scalar
     ts1, ts2 = trans(L, min_v, max_v)
-    P = 0.5 * coef(0, L.shape[0], beta, min_v, max_v) * x
-    tkm2 = x
-    tkm1 = scipy.sparse.csr_matrix.dot(ts1, x) + ts2 * x
-    P = P + coef(1, L.shape[0], beta, min_v, max_v) * tkm1
-
+    # Recurrence relation for Chebyshev polynomials
+    # Tk = 2 * y * Tk_1 - Tk_2
+    # 0,5 * c_n0 * x + sum_{k=1}^{inf} (c_nk * Tk) * x
+    Tk_2 = x
+    Tk_1 = scipy.sparse.csr_matrix.dot(ts1, x) + ts2 * x
+    P = 0.5 * coef(0, beta, min_v, max_v) * x
+    P += coef(1, beta, min_v, max_v) * Tk_1
+    """(2./ (max_v - min_v)) * L, -(float(max_v + min_v) /
+                                         (max_v - min_v))"""
     for i in range(2, n):
-        Tk = 2. * (scipy.sparse.csr_matrix.dot(ts1, tkm1) + ts2 * tkm1) - tkm2
-        P = P + coef(i, L.shape[0], beta, min_v, max_v) * Tk
-        tkm2 = tkm1
-        tkm1 = Tk
+        Tk = 2. * (scipy.sparse.csr_matrix.dot(ts1, Tk_1) + ts2 * Tk_1) - Tk_2
+        P += coef(i, beta, min_v, max_v) * Tk
+        Tk_2 = Tk_1
+        Tk_1 = Tk
 
     return P
 
@@ -258,7 +269,6 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
             * start: initialization
             * F: graph signal
             * G: graph
-            * L: graph laplacian matrix
             * beta: regularization parameter
             * k: max edges cut
             * n: number of polynomials
@@ -274,15 +284,32 @@ def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
 
     eigvec = power_method(-M, start, 10)
     x = chebyshev_approx_1d(n, beta, eigvec, L)
-
-    (x, energy, size) = sweep_opt(x, F, G, k, ind)
-
     res = {}
-    res["x"] = np.array(x)
-    res["size"] = size
-    res["energy"] = energy
+    res["x"], res["energy"], res["size"], res["score"] = sweep_opt(x, F, G, k, ind)
 
     return res
+
+
+def fast_search(G, F, k, n, ind):
+    """
+        Efficient version of cut computation.
+        Does not perform 1-D search for beta.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * n: number of chebyshev polynomials
+            * ind: vertex index vertex: unique integer
+        Output:
+            * cut
+    """
+    start = np.ones(nx.number_of_nodes(G))
+    CAC = fast_cac(G, F, ind)
+
+    return cheb_spectral_cut(CAC, start, F, G, 1., k, n, ind)
+
+
+gr = (math.sqrt(5) - 1) / 2
 
 
 def laplacian_complete(n):
@@ -320,28 +347,6 @@ def weighted_adjacency_complete(G, F, ind):
     return np.array(A)
 
 
-def fast_search(G, F, k, n, ind):
-    """
-        Efficient version of cut computation.
-        Does not perform 1-D search for beta.
-        Input:
-            * G: graph
-            * F: graph signal
-            * k: max edges to be cut
-            * n: number of chebyshev polynomials
-            * ind: vertex index vertex: unique integer
-        Output:
-            * cut
-    """
-    start = np.ones(nx.number_of_nodes(G))
-    CAC = fast_cac(G, F, ind)
-
-    return cheb_spectral_cut(CAC, start, F, G, 1., k, n, ind)
-
-
-gr = (math.sqrt(5) - 1) / 2
-
-
 def one_d_search(G, F, k, ind):
     """
         Cut computation. Perform 1-D search for beta using golden search.
@@ -360,7 +365,8 @@ def one_d_search(G, F, k, ind):
     start = np.ones(nx.number_of_nodes(G))
     L = nx.laplacian_matrix(G).todense()
 
-    # Upper and lower bounds for search
+    # Upper and lower bounds for beta
+    gr = (math.sqrt(5) - 1) / 2
     a = 0.
     b = 1000.
     c = b - gr * (b - a)
@@ -377,19 +383,18 @@ def one_d_search(G, F, k, ind):
         resc = spectral_cut(CAC, L, C, A, start, F, G, c, k, ind)
         resd = spectral_cut(CAC, L, C, A, start, F, G, d, k, ind)
 
-        if resc["size"] <= k:
-            if resc["energy"] > resd["energy"]:
-                start = np.array(resc["x"])
-                b = d
-                d = c
-                c = b - gr * (b - a)
-            else:
-                start = np.array(resd["x"])
-                a = c
-                c = d
-                d = a + gr * (b - a)
+        if resc["size"] <= k and (resc["energy"] > resd["energy"]):
+            start = resc["x"]
+            b = d
+            d = c
+            c = b - gr * (b - a)
+        elif resd["size"] <= k and (resc["energy"] < resd["energy"]):
+            start = resd["x"]
+            a = c
+            c = d
+            d = a + gr * (b - a)
         else:
-            start = np.array(resc["x"])
+            start = resc["x"]
             a = c
             c = d
             d = a + gr * (b - a)
@@ -399,26 +404,26 @@ def one_d_search(G, F, k, ind):
     return resab
 
 
-def optimal_wavelet_basis(G, F, k, npol):
+def optimal_wavelet_basis(G, F, k, npol, method='lobpcg'):
     """
-        Computation of optimal graph wavelet basis.
-        Input:
-            * G: graph
-            * F: graph signal
-            * k: max edges to be cut
-            * npol: number of chebyshev polynomials, if 0 run exact version
-        Output:
-            * root: tree root
-            * ind: vertex index vertex: unique integer
-            * size: number of edges cut
+            Computation of optimal graph wavelet basis.
+            Input:
+                    * G: graph
+                    * F: graph signal
+                    * k: max edges to be cut
+                    * npol: number of chebyshev polynomials, if 0 run exact version
+            Output:
+                    * root: tree root
+                    * ind: vertex index vertex: unique integer
+                    * size: number of edges cut
     """
+    global _method
+    _method = method
+
+    gsp.set_fiedler_method(_method)
 
     # Creating index
-    ind = {}
-    i = 0
-    for v in G.nodes():
-        ind[v] = i
-        i = i + 1
+    ind = {v: i for i, v in enumerate(G.nodes())}
 
     # First cut
     root = Node(None)
@@ -434,63 +439,47 @@ def optimal_wavelet_basis(G, F, k, npol):
     c["graph"] = G
 
     cand_cuts.append(c)
-
-    # Recursively compute new cuts
+    # Recursively find the best cut. Each time it tries first the supposedly
+    # biggest subgraphs inserted earlier in cand_cuts until the list is emptied
+    # or no new best cut is found
     while size <= k and len(cand_cuts) > 0:
         best_cut = None
-        b = 0
+        for i, c in enumerate(cand_cuts):
+            if (c["size"] + size <= k and c["energy"] > 0 and
+                    (best_cut is None or c["energy"] > best_cut["energy"])):
+                best_cut = c
+                b = i
 
-        for i in range(0, len(cand_cuts)):
-            if cand_cuts[i]["size"] + size <= k and cand_cuts[i]["energy"] > 0:
-                if (best_cut is None or
-                        cand_cuts[i]["energy"] > best_cut["energy"]):
-                    best_cut = cand_cuts[i]
-                    b = i
+        # Exit iteration if no better cut is found
         if best_cut is None:
             break
         else:
             # Compute cut on left and right side
-            (G1, G2) = gsp.get_subgraphs(best_cut["graph"], best_cut["x"])
-            best_cut["parent"].cut = best_cut["size"]
-            size = size + best_cut["size"]
+            G1, G2 = gsp.get_subgraphs(best_cut["graph"], best_cut["x"])
 
-            if nx.number_of_nodes(G1) == 1:
-                n = Node(ind[G1.nodes()[0]])
-                best_cut["parent"].add_child(n)
-            elif nx.number_of_nodes(G1) > 0:
-                n = Node(None)
+            size += best_cut["size"]
 
-                if npol == 0:
-                    c = one_d_search(G1, F, k, ind)
-                else:
-                    c = fast_search(G1, F, k, npol, ind)
+            for Gi in (G1, G2):
+                if nx.number_of_nodes(Gi) == 1:
+                    best_cut["parent"].add_child(Node(ind[Gi.nodes()[0]]))
+                elif nx.number_of_nodes(Gi) > 1:
+                    n = Node(None)
 
-                c["parent"] = n
-                c["graph"] = G1
-                cand_cuts.append(c)
+                    if npol == 0:
+                        c = one_d_search(Gi, F, k, ind)
+                    else:
+                        c = fast_search(Gi, F, k, npol, ind)
 
-                best_cut["parent"].add_child(n)
+                    c["parent"] = n
+                    c["graph"] = Gi
+                    cand_cuts.append(c)
 
-            if nx.number_of_nodes(G2) == 1:
-                n = Node(ind[G2.nodes()[0]])
-                best_cut["parent"].add_child(n)
-            elif nx.number_of_nodes(G2) > 0:
-                n = Node(None)
-
-                if npol == 0:
-                    c = one_d_search(G2, F, k, ind)
-                else:
-                    c = fast_search(G2, F, k, npol, ind)
-
-                c["parent"] = n
-                c["graph"] = G2
-                cand_cuts.append(c)
-
-                best_cut["parent"].add_child(n)
+                    best_cut["parent"].add_child(n)
 
             del cand_cuts[b]
 
-    # Compute remaining cuts using ratio cuts once budget is over (not optimal)
+    # Compute remaining cuts using ratio cuts once the budget k is over
+    # until the tree is completely built. (Not optimal search)
     for i in range(0, len(cand_cuts)):
         gsp.rc_recursive(cand_cuts[i]["parent"], cand_cuts[i]["graph"], ind)
 
