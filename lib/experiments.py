@@ -1,3 +1,4 @@
+import math
 import time
 
 import numpy as np
@@ -416,50 +417,50 @@ def compression_experiment(G, F, algs, comp_ratios, num):
     return results, times
 
 
-def plot_compression_experiments(results, comp_ratios, output_file_name,
-                                 max_y):
+def plot_compression_experiments(results, comp_ratios, output_file_name):
     """
         Plots compression size x accuracy experiment.
         Input:
             * results: accuracy results
             * comp_ratios: compression ratios
             * output_file_name: output file name
-            * max_y: maximum y-axis
         Output:
             * None
     """
+
+    # Get range of values
+    highest_val = max([max(results[res]) for res in results])
+    lowest_val = min([min(results[res]) for res in results])
+
     plt.clf()
-
-    for alg in results:
-        for i in range(1, results[alg].shape[0]):
-            if results[alg][i] > results[alg][i - 1]:
-                results[alg][i] = results[alg][i - 1]
-
     ax = plt.subplot(111)
 
-    ax.semilogy(comp_ratios, results["FSWT"], marker="o", color="r",
-                label="FSWT", markersize=15)
-    ax.semilogy(comp_ratios, results["FT"], marker="*", color="c",
-                label="FT", markersize=15)
+    legend_columns = 3
 
+    # Add some white space at the top to place the legend
+    white_space = 0.3 * (len(results) // legend_columns
+                         + bool((len(results) % legend_columns)))
+    max_y = 10**(1 * math.log(highest_val, 10)
+                 + white_space * (math.log(highest_val, 10)
+                                  - math.log(lowest_val, 10)))
+
+    ax.semilogy(comp_ratios, results["FSWT"], marker="o", color="r",
+                label="FSWT")
+    ax.semilogy(comp_ratios, results["FT"], marker="*", color="c",
+                label="FT")
     if "SWT" in results:
         ax.semilogy(comp_ratios, results["SWT"], marker="x", color="b",
-                    label="SWT", markersize=15)
-
+                    label="SWT")
     ax.semilogy(comp_ratios, results["GWT"], marker="s", color="g",
-                label="GWT", markersize=15)
-
+                label="GWT")
     if "HWT" in results:
         ax.semilogy(comp_ratios, results["HWT"], marker="v", color="y",
-                    label="HWT", markersize=15)
+                    label="HWT")
 
-    plt.gcf().subplots_adjust(bottom=0.15)
-    ax.legend(loc='upper center', prop={'size': 20}, ncol=3)
-    ax.set_ylabel(r'L$_2$ error', fontsize=30)
-    ax.set_xlabel('size', fontsize=30)
-    plt.rcParams['xtick.labelsize'] = 20
-    plt.rcParams['ytick.labelsize'] = 20
-    ax.set_xlim(0., 0.65)
-    ax.set_ylim(0., max_y)
+    ax.legend(loc='upper center', ncol=legend_columns)
+    ax.set_ylabel(r'L$_2$ error')
+    ax.set_xlabel('size')
+
+    ax.set_ylim(lowest_val, max_y)
 
     plt.savefig(output_file_name, dpi=300, bbox_inches='tight')
