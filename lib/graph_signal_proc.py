@@ -299,6 +299,7 @@ def sqrtmi(mat):
 
 
 def set_fiedler_method(method):
+    # Set method for Fiedler vector computation
     global _method
     _method = method
 
@@ -456,6 +457,10 @@ def ratio_cut_hierarchy(G, method='lobpcg'):
         inserted node.
         Input:
             * G: graph
+            * method: method for Fiedler vector computation.
+                The default value is 'lobpcg' however 'tracemin_lu'
+                seems faster and gives determinisic output when used with
+                PYTHONHASHSEED set to a constant value.
         Output:
             * root: tree root
             * ind: index with unique integers as values

@@ -115,6 +115,7 @@ class GRCWavelets(object):
     """
 
     def __init__(self, method='lobpcg'):
+        # Method for Fiedler vector computation
         self.method = method
 
     def name(self):
@@ -160,6 +161,7 @@ class OptWavelets(object):
 
     def __init__(self, n=0, method='lobpcg'):
         self.n = n
+        # Method for Fiedler vector computation
         self.method = method
 
     def name(self):

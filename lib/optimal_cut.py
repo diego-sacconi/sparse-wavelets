@@ -66,38 +66,13 @@ def sweep_opt(x, F, G, k, ind):
     return vec, best_energy, best_cut_size
 
 
-def fast_cac(G, F, ind):
-    """
-        Computes product C*A*C, where C is the Laplacian of a complete graph
-        and A is a pairwise squared difference matrix.
-        Input:
-            * G: graph
-            * F: graph signal
-            * ind: vertex index v: unique integer
-        Output:
-            * CAC: matrix product
-    """
-    sorted_F = np.array([F[ind[v]] for v in G.nodes()])
-    return -2 * math.pow(len(sorted_F), 2) * np.outer(sorted_F, sorted_F)
-
-
-def power_method(mat, start, maxit):
-    """
-        Power method implementation.
-        Input:
-            * mat: matrix
-            * start: initialization
-            * maxit: number of iterations
-        Output:
-            * vec: largest eigenvector of mat
-    """
-    vec = np.copy(start)
-    vec = vec / np.linalg.norm(vec)
-
-    for i in range(maxit):
-        vec = np.dot(vec, mat)
-
-    return vec
+###############################################################################
+#  List of functions used only by the SWT:                                   #
+#  - spectral_cut()                                                           #
+#  - complete_graph_laplacian                                                 #
+#  - weighted_adjacency_complete                                              #
+#  - one_d_search                                                             #
+###############################################################################
 
 
 def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
@@ -129,6 +104,112 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
     res["x"], res["energy"], res["size"] = sweep_opt(x, F, G, k, ind)
 
     return res
+
+
+def complete_graph_laplacian(n):
+    """
+        Laplacian of a complete graph with n vertices.
+        Input:
+            * n: size
+        Output:
+            * C: Laplacian
+    """
+    C = np.ones((n, n))
+    C = -1 * C
+    D = np.diag(np.ones(n))
+    C = (n) * D + C
+
+    return C
+
+
+def weighted_adjacency_complete(G, F, ind):
+    """
+        Computes weighted adjacency complete matrix (w(v)-w(u))^2
+        Input:
+            * G: graph
+            * F: graph signal
+            * ind: vertex index vertex: unique integer
+        Output:
+            * A: nxn matrix
+    """
+    A = []
+    for v in G.nodes():
+        A.append([])
+        for u in G.nodes():
+            A[-1].append(pow(F[ind[v]] - F[ind[u]], 2))
+
+    return np.array(A)
+
+
+def one_d_search(G, F, k, ind):
+    """
+        Cut computation. Perform 1-D search for beta using golden search.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * n: number of chebyshev polynomials
+            * ind: vertex index vertex: unique integer
+        Output:
+            * cut
+    """
+    C = complete_graph_laplacian(nx.number_of_nodes(G))
+    A = weighted_adjacency_complete(G, F, ind)
+    CAC = np.dot(np.dot(C, A), C)
+    start = np.ones(nx.number_of_nodes(G))
+    L = nx.laplacian_matrix(G).todense()
+
+    # Upper and lower bounds for beta
+    gr = (math.sqrt(5) - 1) / 2
+    a = 0.
+    b = 1000.
+    c = b - gr * (b - a)
+    d = a + gr * (b - a)
+
+    # Tolerance
+    tol = 1.
+
+    resab = {}
+    resab["size"] = k + 1
+
+    # golden search
+    while abs(c - d) > tol or resab["size"] > k:
+        resc = spectral_cut(CAC, L, C, A, start, F, G, c, k, ind)
+        resd = spectral_cut(CAC, L, C, A, start, F, G, d, k, ind)
+
+        if resc["size"] <= k and (resc["energy"] > resd["energy"]):
+            start = resc["x"]
+            b = d
+            d = c
+            c = b - gr * (b - a)
+        elif resd["size"] <= k and (resc["energy"] < resd["energy"]):
+            start = resd["x"]
+            a = c
+            c = d
+            d = a + gr * (b - a)
+        else:
+            start = resc["x"]
+            a = c
+            c = d
+            d = a + gr * (b - a)
+
+        resab = spectral_cut(CAC, L, C, A, start, F, G, (b + a) / 2, k, ind)
+
+    return resab
+
+
+###############################################################################
+#  List of functions used only by the FSWT:                                   #
+#  - trans()                                                                  #
+#  - isqrt()                                                                  #
+#  - coef()                                                                   #
+#  - chebyshev_approx_2d()                                                    #
+#  - chebyshev_approx_1d()                                                    #
+#  - fast_cac()                                                               #
+#  - power_method()                                                           #
+#  - cheb_spectral_cut()                                                      #
+#  - fast_search()                                                            #
+###############################################################################
 
 
 def trans(L, min_v, max_v):
@@ -260,6 +341,40 @@ def chebyshev_approx_1d(n, beta, x, L):
     return P
 
 
+def fast_cac(G, F, ind):
+    """
+        Computes product C*A*C, where C is the Laplacian of a complete graph
+        and A is a pairwise squared difference matrix.
+        Input:
+            * G: graph
+            * F: graph signal
+            * ind: vertex index v: unique integer
+        Output:
+            * CAC: matrix product
+    """
+    sorted_F = np.array([F[ind[v]] for v in G.nodes()])
+    return -2 * math.pow(len(sorted_F), 2) * np.outer(sorted_F, sorted_F)
+
+
+def power_method(mat, start, maxit):
+    """
+        Power method implementation.
+        Input:
+            * mat: matrix
+            * start: initialization
+            * maxit: number of iterations
+        Output:
+            * vec: largest eigenvector of mat
+    """
+    vec = np.copy(start)
+    vec = vec / np.linalg.norm(vec)
+
+    for i in range(maxit):
+        vec = np.dot(vec, mat)
+
+    return vec
+
+
 def cheb_spectral_cut(CAC, start, F, G, beta, k, n, ind):
     """
         Fast spectral cut implementation using chebyshev polynomials.
@@ -309,118 +424,29 @@ def fast_search(G, F, k, n, ind):
     return cheb_spectral_cut(CAC, start, F, G, 1., k, n, ind)
 
 
-gr = (math.sqrt(5) - 1) / 2
-
-
-def laplacian_complete(n):
-    """
-        Laplacian of a complete graph with n vertices.
-        Input:
-            * n: size
-        Output:
-            * C: Laplacian
-    """
-    C = np.ones((n, n))
-    C = -1 * C
-    D = np.diag(np.ones(n))
-    C = (n) * D + C
-
-    return C
-
-
-def weighted_adjacency_complete(G, F, ind):
-    """
-        Computes weighted adjacency complete matrix (w(v)-w(u))^2
-        Input:
-            * G: graph
-            * F: graph signal
-            * ind: vertex index vertex: unique integer
-        Output:
-            * A: nxn matrix
-    """
-    A = []
-    for v in G.nodes():
-        A.append([])
-        for u in G.nodes():
-            A[-1].append(pow(F[ind[v]] - F[ind[u]], 2))
-
-    return np.array(A)
-
-
-def one_d_search(G, F, k, ind):
-    """
-        Cut computation. Perform 1-D search for beta using golden search.
-        Input:
-            * G: graph
-            * F: graph signal
-            * k: max edges to be cut
-            * n: number of chebyshev polynomials
-            * ind: vertex index vertex: unique integer
-        Output:
-            * cut
-    """
-    C = laplacian_complete(nx.number_of_nodes(G))
-    A = weighted_adjacency_complete(G, F, ind)
-    CAC = np.dot(np.dot(C, A), C)
-    start = np.ones(nx.number_of_nodes(G))
-    L = nx.laplacian_matrix(G).todense()
-
-    # Upper and lower bounds for beta
-    gr = (math.sqrt(5) - 1) / 2
-    a = 0.
-    b = 1000.
-    c = b - gr * (b - a)
-    d = a + gr * (b - a)
-
-    # Tolerance
-    tol = 1.
-
-    resab = {}
-    resab["size"] = k + 1
-
-    # golden search
-    while abs(c - d) > tol or resab["size"] > k:
-        resc = spectral_cut(CAC, L, C, A, start, F, G, c, k, ind)
-        resd = spectral_cut(CAC, L, C, A, start, F, G, d, k, ind)
-
-        if resc["size"] <= k and (resc["energy"] > resd["energy"]):
-            start = resc["x"]
-            b = d
-            d = c
-            c = b - gr * (b - a)
-        elif resd["size"] <= k and (resc["energy"] < resd["energy"]):
-            start = resd["x"]
-            a = c
-            c = d
-            d = a + gr * (b - a)
-        else:
-            start = resc["x"]
-            a = c
-            c = d
-            d = a + gr * (b - a)
-
-        resab = spectral_cut(CAC, L, C, A, start, F, G, (b + a) / 2, k, ind)
-
-    return resab
+# optimal_wavelet_basis() builds the wavelet basis tree. To do so,
+# it calls either the SWT (one_d_search()) or the FSWT (fast_search())
 
 
 def optimal_wavelet_basis(G, F, k, npol, method='lobpcg'):
     """
-            Computation of optimal graph wavelet basis.
-            Input:
-                    * G: graph
-                    * F: graph signal
-                    * k: max edges to be cut
-                    * npol: number of chebyshev polynomials, if 0 run exact version
-            Output:
-                    * root: tree root
-                    * ind: vertex index vertex: unique integer
-                    * size: number of edges cut
+        Computation of optimal graph wavelet basis.
+        Input:
+            * G: graph
+            * F: graph signal
+            * k: max edges to be cut
+            * npol: number of chebyshev polynomials, if 0 run exact version
+            * method: method used for Fiedler vector computation.
+                The default value is 'lobpcg' however 'tracemin_lu'
+                seems faster and gives determinisic output when used with
+                PYTHONHASHSEED set to a constant value.
+        Output:
+            * root: tree root
+            * ind: vertex index vertex: unique integer
+            * size: number of edges cut
     """
-    global _method
-    _method = method
 
-    gsp.set_fiedler_method(_method)
+    gsp.set_fiedler_method(method)
 
     # Creating index
     ind = {v: i for i, v in enumerate(G.nodes())}
