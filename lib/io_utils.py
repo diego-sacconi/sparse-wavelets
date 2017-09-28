@@ -65,7 +65,10 @@ def read_graph(input_graph_name, input_data_name):
             graph_signal[v] = values[v]
 
     input_graph.close()
-    nx.set_node_attributes(G, "value", graph_signal)
+    # print(type(G), type(G.nodes()), type(graph_signal))
+    # nx.set_node_attributes(G, "value", graph_signal)
+    for node, value in graph_signal.items():
+        G.node[node]["value"] = value
 
     return G
 
