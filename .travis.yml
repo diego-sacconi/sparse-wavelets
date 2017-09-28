@@ -1,0 +1,17 @@
+# Configuration file for automatic testing at travis-ci.org
+
+language: python
+python:
+  - "3.4"
+addons:
+  apt:
+    packages:
+    - tar
+install:
+    - pip install -U pip
+    - pip install -U -r requirements.txt
+script:
+    - tar xvzf data.tar.gz
+    - PYTHONPATH=.
+    - export PYTHONHASHSEED=0
+    - python -m doctest lib/experiments.py

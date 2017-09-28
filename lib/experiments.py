@@ -365,12 +365,12 @@ def compression_experiment(G, F, algs, comp_ratios, num):
 
     To run the following DOCTEST set PYTHONHASHSEED=0
 
-    >>> from lib import io, static
+    >>> from lib import io_utils, static
     >>> import lib.datasets as data
     >>>
-    >>> G = io.read_graph(data.small_traffic["path"] + "traffic.graph",
+    >>> G = io_utils.read_graph(data.small_traffic["path"] + "traffic.graph",
     ...                   data.small_traffic["path"] + "traffic.data")
-    >>> F = io.read_values(data.small_traffic["path"] + "traffic.data", G)
+    >>> F = io_utils.read_values(data.small_traffic["path"] + "traffic.data", G)
     >>> algs = [static.OptWavelets(n=5, method='lobpcg'),\
     ... static.OptWavelets(method='tracemin_lu'), static.Fourier(),\
     ... static.GRCWavelets(method='tracemin_lu'), static.HWavelets()]
