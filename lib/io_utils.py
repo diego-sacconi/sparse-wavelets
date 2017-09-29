@@ -64,9 +64,12 @@ def read_graph(input_graph_name, input_data_name):
         if v in G:
             graph_signal[v] = values[v]
 
+<<<<<<< Updated upstream:lib/io.py
     input_graph.close()
     nx.set_node_attributes(G, "value", graph_signal)
 
+=======
+>>>>>>> Stashed changes:lib/io_utils.py
     return G
 
 
