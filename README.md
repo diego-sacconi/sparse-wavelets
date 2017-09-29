@@ -16,7 +16,10 @@ https://nbviewer.jupyter.org/github/arleilps/sparse-wavelets/blob/master/compres
 
 Test:
 ------
-To run the DOCTEST in lib/experiments.py set PYTHONHASHSEED=0 and then
+At the moment there is only one doctest in lib/experiments.py. To run the test
+you should use python version 3.4 or 3.5, NetworkX 1.11 and set PYTHONHASHSEED=0.
+This conditions are needed to constrain the behaviour of the NetworkX function
+fiedler_vector(). Once ready, enter the following command:
 ```
 python -m doctest lib/experiments.py -v
 ```
@@ -25,7 +28,6 @@ python -m doctest lib/experiments.py -v
 For more details, see the paper:  
 [Graph Wavelets via Sparse Cuts ](http://arxiv.org/abs/1602.03320 "")  
 Arlei Silva, Xuan-Hong Dang, Prithwish Basu, Ambuj K Singh, Ananthram Swami  
-ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016 (to appear). 
+ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016 (to appear).
 
 Arlei Silva (arlei@cs.ucsb.edu)
-

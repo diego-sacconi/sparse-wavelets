@@ -363,7 +363,11 @@ def compression_experiment(G, F, algs, comp_ratios, num):
             * results: compression results
             * times: compression times
 
-    To run the following DOCTEST set PYTHONHASHSEED=0
+    The following DOCTEST is designed for NetworkX 1.11. Different versions
+    (ex 2.0) return slightly different Fiedler vectors. Furthermore to get the
+    same vector you should also set PYTHONHASHSEED=0. 'tracemin_lu' seems to
+    be faster and give more stable results than 'lobpcg'. The resulting
+    accuracy of the two method is similar.
 
     >>> from lib import io_utils, static
     >>> import lib.datasets as data
