@@ -13,6 +13,5 @@ install:
     - pip install -U -r requirements.txt
 script:
     - tar xvzf data.tar.gz
-    - PYTHONPATH=.
     - export PYTHONHASHSEED=0
     - python -m doctest lib/experiments.py
