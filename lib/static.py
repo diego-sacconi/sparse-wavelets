@@ -200,7 +200,7 @@ class OptWavelets(object):
         # Computing number of integers required to represent the
         # edges cut (rounded)
         v = n - int(math.ceil(float(size *
-                                    math.log2(len(self.G.edges()))) / 64))
+                                    math.log(len(self.G.edges()), 2)) / 64))
 
         for k in range(v, len(sorted_coeffs)):
             i = sorted_coeffs[k][0]
