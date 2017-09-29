@@ -34,12 +34,14 @@ def sweep_opt(x, F, G, k, ind):
     for v in G.nodes():
         sum_two += F[ind[v]]
 
-    for i in range(N):
-        part_one.add(G.nodes()[sorted_x[i]])
-        sum_one += F[ind[G.nodes()[sorted_x[i]]]]
-        sum_two -= F[ind[G.nodes()[sorted_x[i]]]]
+    nodes_list = list(G.nodes())
 
-        for v in G.neighbors(G.nodes()[sorted_x[i]]):
+    for i in range(N):
+        part_one.add(nodes_list[sorted_x[i]])
+        sum_one += F[ind[nodes_list[sorted_x[i]]]]
+        sum_two -= F[ind[nodes_list[sorted_x[i]]]]
+
+        for v in G.neighbors(nodes_list[sorted_x[i]]):
             if v not in part_one:
                 cut_size += 1
             else:
@@ -487,7 +489,8 @@ def optimal_wavelet_basis(G, F, k, npol, method='lobpcg'):
 
             for Gi in (G1, G2):
                 if nx.number_of_nodes(Gi) == 1:
-                    best_cut["parent"].add_child(Node(ind[Gi.nodes()[0]]))
+                    best_cut["parent"].add_child(
+                        Node(ind[list(Gi.nodes())[0]]))
                 elif nx.number_of_nodes(Gi) > 1:
                     n = Node(None)
 

@@ -319,11 +319,12 @@ def sweep(x, G):
     N = nx.number_of_nodes(G)
     best_val = N - 1
     edges_cut = 0
+    nodes_list = list(G.nodes())
 
     for i in range(N - 1):
-        part_one.add(G.nodes()[sorted_x[i]])
+        part_one.add(nodes_list[sorted_x[i]])
 
-        for v in G.neighbors(G.nodes()[sorted_x[i]]):
+        for v in G.neighbors(nodes_list[sorted_x[i]]):
             if v not in part_one:
                 edges_cut = edges_cut + 1
             else:
@@ -425,8 +426,8 @@ def rc_recursive(node, G, ind):
     """
     if nx.number_of_nodes(G) < 3:
         n = Node(None)
-        n.add_child(Node(ind[G.nodes()[0]]))
-        n.add_child(Node(ind[G.nodes()[1]]))
+        n.add_child(Node(ind[list(G.nodes())[0]]))
+        n.add_child(Node(ind[list(G.nodes())[1]]))
         node.add_child(n)
     else:
         C = ratio_cut(G)
@@ -438,7 +439,7 @@ def rc_recursive(node, G, ind):
             rc_recursive(l, G1, ind)
             node.add_child(l)
         else:
-            l = Node(ind[G1.nodes()[0]])
+            l = Node(ind[list(G1.nodes())[0]])
             node.add_child(l)
 
         if nx.number_of_nodes(G2) > 1:
@@ -446,7 +447,7 @@ def rc_recursive(node, G, ind):
             rc_recursive(r, G2, ind)
             node.add_child(r)
         else:
-            r = Node(ind[G2.nodes()[0]])
+            r = Node(ind[list(G2.nodes())[0]])
             node.add_child(r)
 
 
