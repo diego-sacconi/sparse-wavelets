@@ -38,6 +38,6 @@ List of supported Python versions:
 For more details, see the paper:  
 [Graph Wavelets via Sparse Cuts ](http://arxiv.org/abs/1602.03320 "")  
 Arlei Silva, Xuan-Hong Dang, Prithwish Basu, Ambuj K Singh, Ananthram Swami  
-ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016 (to appear).
+ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016.
 
 Arlei Silva (arlei@cs.ucsb.edu)

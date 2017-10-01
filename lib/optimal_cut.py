@@ -2,6 +2,8 @@ import math
 
 import networkx as nx
 import numpy as np
+from numpy import dot, diag, sqrt
+from numpy.linalg import eigh
 import scipy
 
 from lib.graph_signal_proc import Node
@@ -69,12 +71,28 @@ def sweep_opt(x, F, G, k, ind):
 
 
 ###############################################################################
-#  List of functions used only by the SWT:                                   #
+#  List of functions used only by the SWT:                                    #
+#  - sqrtmi()                                                                 #
 #  - spectral_cut()                                                           #
 #  - complete_graph_laplacian                                                 #
 #  - weighted_adjacency_complete                                              #
 #  - one_d_search                                                             #
 ###############################################################################
+
+
+def sqrtmi(mat):
+    """
+        Computes the square-root inverse of a matrix.
+        Input:
+            * mat: matrix
+        Output:
+            * square root inverse
+    """
+    eigvals, eigvecs = eigh(mat)
+    eigvecs = eigvecs[:, eigvals > 0]
+    eigvals = eigvals[eigvals > 0]
+
+    return dot(eigvecs, dot(diag(1. / sqrt(eigvals)), eigvecs.T))
 
 
 def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
@@ -96,7 +114,7 @@ def spectral_cut(CAC, L, C, A, start, F, G, beta, k, ind):
                 - size: number of edges cut
                 - energy: cut energy
     """
-    isqrtCL = gsp.sqrtmi(C + beta * L)
+    isqrtCL = sqrtmi(C + beta * L)
     M = np.dot(np.dot(isqrtCL, CAC), isqrtCL)
 
     (eigvals, eigvecs) = scipy.linalg.eigh(M, eigvals=(0, 0))
@@ -439,9 +457,9 @@ def optimal_wavelet_basis(G, F, k, npol, method='lobpcg'):
             * k: max edges to be cut
             * npol: number of chebyshev polynomials, if 0 run exact version
             * method: method used for Fiedler vector computation.
-                The default value is 'lobpcg' however 'tracemin_lu'
-                seems faster and gives determinisic output when used with
-                PYTHONHASHSEED set to a constant value.
+                The default value is 'lobpcg' however 'tracemin_lu' seems
+                faster and it appears to give more stable results when used
+                with PYTHONHASHSEED set to a constant value.
         Output:
             * root: tree root
             * ind: vertex index vertex: unique integer

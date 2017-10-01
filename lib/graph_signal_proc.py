@@ -3,8 +3,7 @@ from collections import deque
 
 import networkx as nx
 import numpy as np
-from numpy import dot, diag, sqrt
-from numpy.linalg import eigh
+from numpy import dot, diag
 import scipy.optimize
 from scipy import linalg
 import scipy.fftpack
@@ -283,21 +282,6 @@ def set_counts(tree):
         return count
 
 
-def sqrtmi(mat):
-    """
-        Computes the square-root inverse of a matrix.
-        Input:
-            * mat: matrix
-        Output:
-            * square root inverse
-    """
-    eigvals, eigvecs = eigh(mat)
-    eigvecs = eigvecs[:, eigvals > 0]
-    eigvals = eigvals[eigvals > 0]
-
-    return dot(eigvecs, dot(diag(1. / sqrt(eigvals)), eigvecs.T))
-
-
 def set_fiedler_method(method):
     # Set method for Fiedler vector computation
     global _method
@@ -459,9 +443,9 @@ def ratio_cut_hierarchy(G, method='lobpcg'):
         Input:
             * G: graph
             * method: method for Fiedler vector computation.
-                The default value is 'lobpcg' however 'tracemin_lu'
-                seems faster and gives determinisic output when used with
-                PYTHONHASHSEED set to a constant value.
+                The default value is 'lobpcg' however 'tracemin_lu' seems
+                faster and it appears to give more stable results when used
+                with PYTHONHASHSEED set to a constant value.
         Output:
             * root: tree root
             * ind: index with unique integers as values
